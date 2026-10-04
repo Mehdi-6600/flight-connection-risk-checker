@@ -1,4 +1,4 @@
-const CACHE_NAME = "flight-connection-risk-checker-v1.0.0";
+const CACHE_NAME = "flight-connection-risk-checker-v1.0.1";
 const APP_SHELL = [
   "/",
   "/index.html",
