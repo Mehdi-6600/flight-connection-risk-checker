@@ -5,6 +5,8 @@
  * کشورهای مجاز (ایران، ترکیه، عراق، عمان) قرار دارند. مسیرهای خارج از
  * این چهار کشور (قطر، امارات، بریتانیا و ...) از این فایل حذف شده‌اند و
  * به Route Library منتقل نمی‌شوند.
+ *
+ * ساختار airports: [مبدأ، فرودگاه ورود، فرودگاه خروج، مقصد]
  */
 
 export const COMMON_ROUTES = [
@@ -47,5 +49,15 @@ export const COMMON_ROUTES = [
     id: "muscat-baghdad-tehran",
     label: "مسقط → بغداد → تهران",
     airports: ["MCT", "BGW", "BGW", "IKA"],
+  },
+  {
+    id: "tehran-muscat-baghdad",
+    label: "تهران → مسقط → بغداد",
+    airports: ["IKA", "MCT", "MCT", "BGW"],
+  },
+  {
+    id: "baghdad-muscat-tehran",
+    label: "بغداد → مسقط → تهران",
+    airports: ["BGW", "MCT", "MCT", "IKA"],
   },
 ];
