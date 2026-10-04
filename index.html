@@ -62,7 +62,6 @@
     <main id="main-content">
       <div class="container">
 
-        <!-- Monitoring Header -->
         <section class="monitoring-header no-print" id="top">
           <span class="monitoring-badge">✈️ ابزار عملیاتی</span>
           <h1>رصد پروازها و فرودگاه‌های منطقه</h1>
@@ -73,7 +72,6 @@
           </div>
         </section>
 
-        <!-- Frequent Routes (compact chips) -->
         <section class="frequent-routes no-print" aria-label="مسیرهای پرتکرار">
           <div class="section-title-row">
             <h2>⚡ مسیرهای پرتکرار</h2>
@@ -82,11 +80,9 @@
           <div class="route-chips-row" id="frequent-routes-chips"></div>
         </section>
 
-        <!-- Route Builder Form -->
         <section class="route-builder-section" id="form-section">
           <form id="connection-form" novalidate>
 
-            <!-- Leg 1: Origin -->
             <div class="leg-card" id="leg-origin">
               <div class="leg-badge">۱</div>
               <div class="leg-title">مبدأ</div>
@@ -113,14 +109,8 @@
               <p class="leg-error" data-error-for="origin" hidden></p>
             </div>
 
-            <!-- Connector -->
-            <div class="leg-connector" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 5v14M6 13l6 6 6-6" />
-              </svg>
-            </div>
+            <div class="leg-connector" aria-hidden="true"></div>
 
-            <!-- Leg 2: Connection -->
             <div class="leg-card" id="leg-connection">
               <div class="leg-badge">۲</div>
               <div class="leg-title">مقصد اول (اتصال)</div>
@@ -147,14 +137,8 @@
               <p class="leg-error" data-error-for="connection" hidden></p>
             </div>
 
-            <!-- Connector -->
-            <div class="leg-connector" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 5v14M6 13l6 6 6-6" />
-              </svg>
-            </div>
+            <div class="leg-connector" aria-hidden="true"></div>
 
-            <!-- Leg 3: Final Destination -->
             <div class="leg-card" id="leg-destination">
               <div class="leg-badge">۳</div>
               <div class="leg-title">مقصد دوم (نهایی)</div>
@@ -181,7 +165,6 @@
               <p class="leg-error" data-error-for="destination" hidden></p>
             </div>
 
-            <!-- Date & Time Section -->
             <div class="datetime-section">
               <div class="section-title-row">
                 <h2>📅 تاریخ و ساعت پروازها</h2>
@@ -234,7 +217,6 @@
               </div>
             </div>
 
-            <!-- Airline & Flight Number (optional, collapsed) -->
             <details class="advanced-details">
               <summary>اطلاعات تکمیلی پرواز (اختیاری)</summary>
               <div class="advanced-grid">
@@ -257,7 +239,6 @@
               </div>
             </details>
 
-            <!-- Connection Conditions -->
             <div class="connection-details">
               <div class="connection-details-header">
                 <span class="connection-details-icon" aria-hidden="true">
@@ -275,7 +256,6 @@
               <div class="connection-conditions" id="connection-conditions"></div>
             </div>
 
-            <!-- Timeline Preview -->
             <div class="connection-timeline no-print" id="connection-timeline">
               <div class="timeline-segment">
                 <div class="timeline-airport">
@@ -300,7 +280,6 @@
               </div>
             </div>
 
-            <!-- Error Summary -->
             <div class="form-error-summary" id="form-error-summary" hidden aria-live="polite">
               <span class="error-summary-icon" aria-hidden="true">!</span>
               <div>
@@ -309,7 +288,6 @@
               </div>
             </div>
 
-            <!-- Submit -->
             <div class="form-actions">
               <button type="submit" class="primary-button" id="analyze-button">
                 <span id="analyze-button-text">بررسی ریسک اتصال</span>
@@ -325,7 +303,6 @@
           </form>
         </section>
 
-        <!-- Recent Routes -->
         <section class="frequent-routes no-print" id="recent-routes-section" aria-label="مسیرهای اخیر" hidden>
           <div class="section-title-row">
             <h2>🕘 مسیرهای اخیر</h2>
@@ -334,7 +311,6 @@
           <div class="route-chips-row" id="recent-routes-chips"></div>
         </section>
 
-        <!-- Result Section -->
         <section class="result-section no-print" id="result-section" aria-labelledby="result-title" hidden>
           <div class="result-panel" id="result-panel">
             <div class="result-header">
@@ -505,7 +481,6 @@
           </div>
         </section>
 
-        <!-- History -->
         <section class="history-section" id="history-section">
           <div class="section-title-row">
             <h2>تاریخچه تحلیل‌ها</h2>
