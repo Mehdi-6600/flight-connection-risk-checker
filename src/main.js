@@ -2,7 +2,10 @@ import { COMMON_ROUTES } from "../data/common-routes.js";
 import { airportLabel, getAirportByIata, listAirports, resolveAirport } from "./lib/airports.js";
 import { copyTextToClipboard } from "./lib/clipboard.js";
 import { CONNECTION_QUESTIONS, createConnectionAnswers, sanitizeConnectionAnswers } from "./lib/connection-questions.js";
+import { buildCustomerNotice } from "./lib/customer-notice.js";
 import { evaluateConnection, resolveFlightTimes, simulateDelays } from "./lib/risk-engine/engine.js";
+import { MONITORED_COUNTRIES, isMonitoredCountry } from "./lib/monitoring-scope.js";
+import { buildQuickRouteChips, groupAirportsByCountry, pushRecentRoute, readRecentRoutes } from "./lib/routes.js";
 import { formatDuration, formatPersianDate, toPersianDigits } from "./lib/time.js";
 
 const HISTORY_KEY = "flight-connection-risk-checker.history.v1";
@@ -22,12 +25,17 @@ const analyzeButtonLoading = document.querySelector("#analyze-button-loading");
 const themeToggle = document.querySelector("#theme-toggle");
 const siteHeader = document.querySelector("#site-header");
 const quickRoutesCarousel = document.querySelector("#quick-routes-carousel");
+const recentRoutesSection = document.querySelector("#recent-routes-section");
+const recentRoutesCarousel = document.querySelector("#recent-routes-carousel");
 const conditionsContainer = document.querySelector("#connection-conditions");
 const historyList = document.querySelector("#history-list");
 const historyEmpty = document.querySelector("#history-empty");
 const historyCount = document.querySelector("#history-count");
 const clearHistoryButton = document.querySelector("#clear-history-button");
 const copyFeedback = document.querySelector("#copy-feedback");
+const customerNoticeContainer = document.querySelector("#customer-notice-text");
+const copyNoticeButton = document.querySelector("#copy-notice-button");
+const noticeFeedback = document.querySelector("#notice-feedback");
 const toast = document.querySelector("#toast");
 
 const ICON_PATHS = Object.freeze({
@@ -44,12 +52,16 @@ const ICON_PATHS = Object.freeze({
   moon: ["M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"],
   calendar: ["M8 2v4M16 2v4", "M3 10h18", "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"],
   warning: ["M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z", "M12 9v4", "M12 17h.01"],
+  star: ["m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"],
+  history: ["M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.36 2.64L3 8", "M3 3v5h5", "M12 7v5l3 2"],
+  document: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M16 13H8", "M16 17H8", "M10 9H8"],
 });
 
 let connectionAnswers = createConnectionAnswers();
 let activeInput = null;
 let activeAnalysis = null;
 let activeCreatedAt = null;
+let activeNotice = "";
 let toastTimer = null;
 let secondOriginMirrored = false;
 
@@ -101,6 +113,12 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function countryFlagFor(airport) {
+  if (!airport) return "";
+  const found = MONITORED_COUNTRIES.find((c) => c.nameFa === airport.countryFa);
+  return found?.flag ?? "";
+}
+
 /* ---------- پیام و اعلان ---------- */
 
 function showToast(message) {
@@ -115,6 +133,11 @@ function showToast(message) {
 function setCopyFeedback(message) {
   copyFeedback.textContent = message ?? "";
   copyFeedback.hidden = !message;
+}
+
+function setNoticeFeedback(message) {
+  noticeFeedback.textContent = message ?? "";
+  noticeFeedback.hidden = !message;
 }
 
 /* ---------- تم روشن/تاریک ---------- */
@@ -132,7 +155,7 @@ function storeTheme(theme) {
   try {
     window.localStorage.setItem(THEME_KEY, theme);
   } catch {
-    // ذخیرهٔ تم اختیاری است؛ نبود دسترسی به localStorage مانع کار برنامه نمی‌شود.
+    // اختیاری
   }
 }
 
@@ -161,46 +184,68 @@ function initializeTheme() {
 
 function initializeAirportOptions() {
   const datalist = document.querySelector("#airport-options");
+  if (!datalist) return;
   const fragment = document.createDocumentFragment();
   for (const airport of listAirports()) {
     const option = document.createElement("option");
     option.value = airportLabel(airport);
-    option.label = `${airport.iata} · ${airport.nameFa} · ${airport.cityFa}، ${airport.countryFa}`;
+    option.label = `${countryFlagFor(airport)} ${airport.iata} · ${airport.nameFa} · ${airport.cityFa}`;
     fragment.append(option);
   }
   datalist.replaceChildren(fragment);
 }
 
+function createRouteCard(route) {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "quick-route-card";
+  card.dataset.routeId = route.id;
+
+  const header = document.createElement("div");
+  header.className = "quick-route-card-header";
+  const icon = document.createElement("span");
+  icon.className = "quick-route-icon";
+  icon.append(createIcon("plane"));
+  header.append(icon);
+  appendTextElement(header, "span", "quick-route-name", route.label);
+
+  const path = document.createElement("div");
+  path.className = "quick-route-path";
+  const pathText = route.iatas
+    .filter((code, index, arr) => index === 0 || code !== arr[index - 1])
+    .join(" → ");
+  appendTextElement(path, "span", "quick-route-path-codes", pathText);
+
+  const countriesLine = document.createElement("div");
+  countriesLine.className = "quick-route-countries";
+  const uniqueCountries = new Set(route.iatas.map((code) => getAirportByIata(code)?.countryFa).filter(Boolean));
+  countriesLine.textContent = [...uniqueCountries].join(" · ");
+
+  card.append(header, path, countriesLine);
+  return card;
+}
+
 function initializeQuickRoutes() {
   const fragment = document.createDocumentFragment();
   for (const route of COMMON_ROUTES) {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "quick-route-card";
-    card.dataset.routeId = route.id;
-
-    const header = document.createElement("div");
-    header.className = "quick-route-card-header";
-    const icon = document.createElement("span");
-    icon.className = "quick-route-icon";
-    icon.append(createIcon("plane"));
-    header.append(icon);
-    appendTextElement(header, "span", "quick-route-name", route.label);
-
-    const path = document.createElement("div");
-    path.className = "quick-route-path";
-    path.append(createIcon("arrow"));
-    appendTextElement(path, "span", "", route.airports.join(" → "));
-
-    const time = document.createElement("div");
-    time.className = "quick-route-time";
-    time.append(createIcon("info"));
-    appendTextElement(time, "span", "", "فقط فرودگاه‌ها پر می‌شوند");
-
-    card.append(header, path, time);
-    fragment.append(card);
+    fragment.append(createRouteCard({ id: route.id, label: route.label, iatas: route.airports }));
   }
-  quickRoutesCarousel.replaceChildren(fragment);
+  if (quickRoutesCarousel) quickRoutesCarousel.replaceChildren(fragment);
+  renderRecentRoutes();
+}
+
+function renderRecentRoutes() {
+  if (!recentRoutesSection || !recentRoutesCarousel) return;
+  const recent = readRecentRoutes();
+  if (!recent.length) {
+    recentRoutesSection.hidden = true;
+    recentRoutesCarousel.replaceChildren();
+    return;
+  }
+  recentRoutesSection.hidden = false;
+  const fragment = document.createDocumentFragment();
+  for (const route of recent) fragment.append(createRouteCard(route));
+  recentRoutesCarousel.replaceChildren(fragment);
 }
 
 function initializeConditions() {
@@ -301,7 +346,7 @@ function collectFormInput() {
     } else if (resolution.status === "ambiguous") {
       errors.push({ field: id, message: `برای «${label}» چند فرودگاه پیدا شد؛ کد IATA را از پیشنهادها انتخاب کنید.` });
     } else if (resolution.status !== "matched") {
-      errors.push({ field: id, message: `«${label}» در فهرست داخلی پیدا نشد؛ کد IATA/ICAO یا نام دقیق فرودگاه را وارد کنید.` });
+      errors.push({ field: id, message: `«${label}» در فهرست فرودگاه‌های مجاز (ایران، ترکیه، عراق، عمان) پیدا نشد.` });
     } else {
       resolvedAirports[id] = resolution.airport;
     }
@@ -436,6 +481,7 @@ function makeRouteText(input, analysis) {
 
 function renderRouteTags(input, analysis) {
   const container = document.querySelector("#route-summary-tags");
+  if (!container) return;
   const fragment = document.createDocumentFragment();
   const tags = [
     analysis.connection.sameAirport
@@ -470,6 +516,7 @@ function createStatCard({ icon, tone = "primary", label, value, note }) {
 
 function renderStats(input, analysis) {
   const container = document.querySelector("#connection-stats");
+  if (!container) return;
   const buffer = analysis.timing.connectionMinutes - analysis.timing.estimatedMinimumMinutes;
   const offset = analysis.connection.timezoneOffsetDifferenceMinutes;
   const fragment = document.createDocumentFragment();
@@ -514,6 +561,7 @@ function factorTone(factor) {
 
 function renderFactors(analysis) {
   const container = document.querySelector("#factor-list");
+  if (!container) return;
   const fragment = document.createDocumentFragment();
   const factors = [...analysis.factors].sort((a, b) => b.points - a.points || a.title.localeCompare(b.title, "fa"));
   for (const factor of factors) {
@@ -543,6 +591,7 @@ function delayStatus(evaluation) {
 
 function renderDelays(input) {
   const container = document.querySelector("#delay-grid");
+  if (!container) return;
   const fragment = document.createDocumentFragment();
   for (const scenario of simulateDelays(input)) {
     const { result } = scenario;
@@ -583,6 +632,17 @@ function renderDelays(input) {
   container.replaceChildren(fragment);
 }
 
+function renderCustomerNotice(input, analysis) {
+  if (!customerNoticeContainer) return;
+  const notice = buildCustomerNotice(input, analysis);
+  activeNotice = notice;
+  const fragment = document.createDocumentFragment();
+  for (const paragraph of notice.split("\n\n")) {
+    appendTextElement(fragment, "p", "notice-paragraph", paragraph);
+  }
+  customerNoticeContainer.replaceChildren(fragment);
+}
+
 function renderAnalysis(input, analysis, createdAt = new Date().toISOString()) {
   activeInput = input;
   activeAnalysis = analysis;
@@ -618,9 +678,11 @@ function renderAnalysis(input, analysis, createdAt = new Date().toISOString()) {
   setText("#recommendation-text", analysis.recommendation);
   renderFactors(analysis);
   renderDelays(input);
+  renderCustomerNotice(input, analysis);
   updateConnectionTimeline();
   paintTimeline(level.id);
   setCopyFeedback("");
+  setNoticeFeedback("");
 }
 
 /* ---------- تاریخچه ---------- */
@@ -784,8 +846,8 @@ function makeCopyText() {
     "سناریوی تأخیر پرواز اول:",
     ...delays.map((line) => `• ${line}`),
     `توصیه: ${analysis.recommendation}`,
-    analysis.notice,
-    "بررسی نهایی باید با قوانین رسمی ایرلاین و فرودگاه انجام شود.",
+    "---- اطلاعیه رسمی مشتری ----",
+    activeNotice,
   ].join("\n");
 }
 
@@ -799,6 +861,21 @@ async function copyResult() {
   } catch {
     setCopyFeedback("کپی خودکار در این مرورگر در دسترس نیست.");
     showToast("کپی خودکار در دسترس نیست؛ دسترسی مرورگر را بررسی کنید.");
+  }
+}
+
+async function copyNotice() {
+  if (!activeNotice) {
+    showToast("ابتدا یک تحلیل انجام دهید.");
+    return;
+  }
+  try {
+    await copyTextToClipboard(activeNotice);
+    setNoticeFeedback("اطلاعیه کپی شد.");
+    showToast("اطلاعیه رسمی کپی شد.");
+  } catch {
+    setNoticeFeedback("کپی خودکار در این مرورگر در دسترس نیست.");
+    showToast("کپی خودکار در دسترس نیست.");
   }
 }
 
@@ -826,6 +903,18 @@ form.addEventListener("submit", (event) => {
       const createdAt = new Date().toISOString();
       renderAnalysis(input, analysis, createdAt);
       saveAnalysis(input, analysis, createdAt);
+      const routeIatas = [
+        input.flight1.origin.iata,
+        input.flight1.destination.iata,
+        input.flight2.origin.iata,
+        input.flight2.destination.iata,
+      ];
+      pushRecentRoute({
+        id: `recent-${routeIatas.join("-")}`,
+        label: `${input.flight1.origin.iata} → ${input.flight1.destination.iata} → ${input.flight2.destination.iata}`,
+        iatas: routeIatas,
+      });
+      renderRecentRoutes();
       resultPanel.scrollIntoView({
         behavior: prefersReducedMotion() ? "auto" : "smooth",
         block: "start",
@@ -871,14 +960,15 @@ document.querySelector("#flight2-origin").addEventListener("input", () => {
   secondOriginMirrored = false;
 });
 
-quickRoutesCarousel.addEventListener("click", (event) => {
+function handleQuickRouteClick(event) {
   const target = event.target instanceof Element ? event.target : null;
   const card = target?.closest(".quick-route-card");
   if (!card) return;
-  const preset = COMMON_ROUTES.find((route) => route.id === card.dataset.routeId);
+  const allRoutes = [...COMMON_ROUTES.map((r) => ({ id: r.id, iatas: r.airports })), ...readRecentRoutes()];
+  const preset = allRoutes.find((route) => route.id === card.dataset.routeId);
   if (!preset) return;
   const selectors = ["#flight1-origin", "#flight1-destination", "#flight2-origin", "#flight2-destination"];
-  preset.airports.forEach((code, index) => {
+  preset.iatas.forEach((code, index) => {
     const field = document.querySelector(selectors[index]);
     const airport = getAirportByIata(code);
     if (field && airport) field.value = airportLabel(airport);
@@ -887,7 +977,10 @@ quickRoutesCarousel.addEventListener("click", (event) => {
   clearFormErrors();
   updateConnectionTimeline();
   showToast("فرودگاه‌های مسیر وارد شد؛ زمان و شرایط اتصال را تکمیل کنید.");
-});
+}
+
+quickRoutesCarousel.addEventListener("click", handleQuickRouteClick);
+if (recentRoutesCarousel) recentRoutesCarousel.addEventListener("click", handleQuickRouteClick);
 
 historyList.addEventListener("click", (event) => {
   const target = event.target instanceof Element ? event.target : null;
@@ -932,6 +1025,7 @@ document.querySelector("#print-result-button").addEventListener("click", () => {
   }
   window.print();
 });
+if (copyNoticeButton) copyNoticeButton.addEventListener("click", copyNotice);
 
 window.addEventListener("scroll", () => {
   siteHeader.classList.toggle("scrolled", window.scrollY > 8);
