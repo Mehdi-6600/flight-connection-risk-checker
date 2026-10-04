@@ -1,7 +1,16 @@
 import { AIRPORTS } from "../../data/airports.js";
+import { isMonitoredCountry } from "./monitoring-scope.js";
 
-const byIata = new Map(AIRPORTS.map((airport) => [airport.iata, airport]));
-const byIcao = new Map(AIRPORTS.map((airport) => [airport.icao, airport]));
+/**
+ * در این نسخه، فقط فرودگاه‌های چهار کشور مجاز (ایران، ترکیه، عراق، عمان)
+ * قابل انتخاب و رصد هستند. داده‌های خام در data/airports.js نگه داشته
+ * می‌شوند اما از این لایه به بعد فیلتر می‌شوند تا هیچ مسیر یا فرودگاهی
+ * خارج از scope در UI، Search، Monitoring یا History ظاهر نشود.
+ */
+const SCOPED_AIRPORTS = AIRPORTS.filter((airport) => isMonitoredCountry(airport.country));
+
+const byIata = new Map(SCOPED_AIRPORTS.map((airport) => [airport.iata, airport]));
+const byIcao = new Map(SCOPED_AIRPORTS.map((airport) => [airport.icao, airport]));
 
 export function normalizeAirportText(value) {
   return String(value ?? "")
@@ -34,7 +43,7 @@ export function resolveAirport(value) {
   }
 
   const query = normalizeAirportText(original);
-  const exactAirports = AIRPORTS.filter((airport) =>
+  const exactAirports = SCOPED_AIRPORTS.filter((airport) =>
     [airport.nameFa, airport.nameEn, airport.cityFa, airport.city, airport.iata, airport.icao]
       .some((text) => normalizeAirportText(text) === query),
   );
@@ -42,7 +51,7 @@ export function resolveAirport(value) {
   if (unique.length === 1) return { status: "matched", airport: unique[0], matches: unique };
   if (unique.length > 1) return { status: "ambiguous", matches: unique };
 
-  const partialAirports = AIRPORTS.filter((airport) =>
+  const partialAirports = SCOPED_AIRPORTS.filter((airport) =>
     [airport.nameFa, airport.nameEn, airport.cityFa, airport.city]
       .some((text) => normalizeAirportText(text) === query),
   );
@@ -68,5 +77,5 @@ export function sameCity(first, second) {
 }
 
 export function listAirports() {
-  return AIRPORTS;
+  return SCOPED_AIRPORTS;
 }
