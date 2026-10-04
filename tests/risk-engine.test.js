@@ -141,7 +141,14 @@ test("پرواز دوم پیش از ورود یا زمان منفی برای ا�
   const times = resolveFlightTimes(beforeArrival);
   assert.equal(times.ok, false);
   assert.match(times.error, /بعد از زمان ورود/);
+  assert.equal(times.field, "flight2-departure-time");
   assert.throws(() => evaluateConnection(beforeArrival), /بعد از زمان ورود/);
+
+  const arrivalBeforeDeparture = makeInput(0);
+  arrivalBeforeDeparture.flight1.arrivalTime = "08:00";
+  const reversed = resolveFlightTimes(arrivalBeforeDeparture);
+  assert.equal(reversed.ok, false);
+  assert.equal(reversed.field, "flight1-arrival-time");
 });
 
 test("تأخیرهای ۱۵ تا ۱۲۰ دقیقه از همان موتور استفاده می‌کنند و ریسک با کاهش زمان بالا می‌رود", () => {

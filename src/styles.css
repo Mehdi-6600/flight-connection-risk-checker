@@ -2544,3 +2544,288 @@ textarea:focus-visible {
     border: 2px solid currentColor;
   }
 }
+
+
+/* ============================================
+   تکمیل‌های نسخهٔ بازطراحی‌شده
+   ============================================ */
+
+/* کلاس حالت روشن: برای زمانی که سیستم تاریک است و کاربر روشن را انتخاب می‌کند */
+.light-mode {
+  /* Color Scheme */
+  color-scheme: light;
+  
+  /* Primary Colors */
+  --primary: #0F766E;
+  --primary-hover: #0D9488;
+  --primary-light: rgba(15, 118, 110, 0.1);
+  
+  /* Accent Colors */
+  --accent-amber: #F59E0B;
+  --accent-danger: #EF4444;
+  --accent-warning: #F59E0B;
+  --accent-success: #10B981;
+  
+  /* Semantic Colors */
+  --risk-low: #10B981;
+  --risk-low-bg: rgba(16, 185, 129, 0.1);
+  --risk-medium: #F59E0B;
+  --risk-medium-bg: rgba(245, 158, 11, 0.1);
+  --risk-high: #EF4444;
+  --risk-high-bg: rgba(239, 68, 68, 0.1);
+  
+  /* Background Colors */
+  --bg-primary: linear-gradient(135deg, #F0FDFA 0%, #F8FAFC 100%);
+  --bg-secondary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  
+  /* Border Colors */
+  --border-light: #E2E8F0;
+  --border-medium: #CBD5E0;
+  
+  /* Text Colors */
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  --text-inverse: #FFFFFF;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #0F766E 0%, #10B981 100%);
+  --gradient-surface: linear-gradient(135deg, #F0FDFA 0%, #F8FAFC 100%);
+  
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Typography */
+  --font-family-fa: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-en: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Z-Index Scale */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+  
+  /* Layout */
+  --max-width: 1200px;
+  --container-padding: 1rem;
+  
+  /* Animation */
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
+  
+  /* Focus Styles */
+  --focus-ring: 0 0 0 3px rgba(15, 118, 110, 0.2);
+  --focus-border: 2px solid #0F766E;
+  --risk-very-high: #B91C1C;
+  --risk-very-high-bg: rgba(185, 28, 28, 0.1);
+}
+
+:root {
+  --risk-very-high: #B91C1C;
+  --risk-very-high-bg: rgba(185, 28, 28, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --risk-very-high: #F87171;
+    --risk-very-high-bg: rgba(248, 113, 113, 0.2);
+  }
+}
+
+.dark-mode {
+  --risk-very-high: #F87171;
+  --risk-very-high-bg: rgba(248, 113, 113, 0.2);
+}
+
+/* سطح «ریسک بسیار بالا» در کارت‌ها و نشان‌ها */
+.risk-card-very-high {
+  background: var(--risk-very-high-bg);
+  border: 1px solid rgba(185, 28, 28, 0.35);
+}
+
+.risk-badge-very-high {
+  background: rgba(185, 28, 28, 0.18);
+  color: var(--risk-very-high);
+}
+
+.risk-icon-very-high {
+  background: rgba(185, 28, 28, 0.18);
+  color: var(--risk-very-high);
+}
+
+.risk-meter-very-high {
+  background: linear-gradient(to right, var(--risk-high), var(--risk-very-high));
+}
+
+.delay-risk-very-high,
+.history-risk-badge-very-high {
+  background: var(--risk-very-high-bg);
+  color: var(--risk-very-high);
+}
+
+/* کارت‌های مسیر پرتکرار (دکمه) */
+.quick-route-card {
+  display: block;
+  text-align: right;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.quick-route-card:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* گروه‌های شرایط اتصال */
+.connection-conditions {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  align-items: start;
+}
+
+.condition-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.condition-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.condition-group-help {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.condition-chip-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.condition-chip {
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.condition-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--primary);
+}
+
+/* خط زمانی اتصال بر اساس سطح ریسک */
+.timeline-connector.risk-low {
+  background: linear-gradient(to right, var(--border-light), var(--risk-low), var(--border-light));
+}
+
+.timeline-connector.risk-low::before {
+  background: var(--risk-low);
+}
+
+.timeline-connector.risk-medium {
+  background: linear-gradient(to right, var(--border-light), var(--risk-medium), var(--border-light));
+}
+
+.timeline-connector.risk-medium::before {
+  background: var(--risk-medium);
+}
+
+.timeline-connector.risk-high {
+  background: linear-gradient(to right, var(--border-light), var(--risk-high), var(--border-light));
+}
+
+.timeline-connector.risk-high::before {
+  background: var(--risk-high);
+}
+
+.timeline-connector.risk-very-high {
+  background: linear-gradient(to right, var(--border-light), var(--risk-very-high), var(--border-light));
+}
+
+.timeline-connector.risk-very-high::before {
+  background: var(--risk-very-high);
+}
+
+/* سربرگ تاریخچه و شمارنده */
+.history-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.history-count {
+  min-width: 24px;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  direction: ltr;
+}
+
+.history-risk-badge-low {
+  background: var(--risk-low-bg);
+  color: var(--risk-low);
+}
+
+.history-risk-badge-medium {
+  background: var(--risk-medium-bg);
+  color: var(--risk-medium);
+}
+
+.history-risk-badge-high {
+  background: var(--risk-high-bg);
+  color: var(--risk-high);
+}
+
+/* فهرست عوامل در نتیجه */
+.factor-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
