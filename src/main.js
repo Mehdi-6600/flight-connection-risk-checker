@@ -1,5 +1,6 @@
 import { COMMON_ROUTES } from "../data/common-routes.js";
 import { airportLabel, getAirportByIata, listAirports, resolveAirport } from "./lib/airports.js";
+import { copyTextToClipboard } from "./lib/clipboard.js";
 import { evaluateConnection, resolveFlightTimes, simulateDelays } from "./lib/risk-engine/engine.js";
 import { formatDuration, formatPersianDate, toPersianDigits } from "./lib/time.js";
 
@@ -496,20 +497,7 @@ async function copyResult() {
   const text = makeCopyText();
   if (!text) return;
   try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      const fallback = document.createElement("textarea");
-      fallback.value = text;
-      fallback.setAttribute("readonly", "");
-      fallback.style.position = "fixed";
-      fallback.style.opacity = "0";
-      document.body.append(fallback);
-      fallback.select();
-      const copied = document.execCommand("copy");
-      fallback.remove();
-      if (!copied) throw new Error("clipboard unavailable");
-    }
+    await copyTextToClipboard(text);
     setText("#copy-feedback", "نتیجه کپی شد.");
     showToast("متن نتیجه کپی شد.");
   } catch {
