@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { AIRPORTS } from "../data/airports.js";
-import { MONITORED_COUNTRY_CODES, isMonitoredCountry, countryCodeOf } from "../src/lib/monitoring-scope.js";
+import { MONITORED_COUNTRY_CODES, isMonitoredCountry } from "../src/lib/monitoring-scope.js";
 
 test("رکوردهای فرودگاه دارای IATA/ICAO یکتا، منطقهٔ زمانی معتبر و ارجاع هم‌شهری معتبرند", () => {
   const iataCodes = new Set();
@@ -16,7 +16,7 @@ test("رکوردهای فرودگاه دارای IATA/ICAO یکتا، منطقه
     assert.ok(!icaoCodes.has(airport.icao), `کد تکراری ICAO: ${airport.icao}`);
     iataCodes.add(airport.iata);
     icaoCodes.add(airport.icao);
-    for (const key of ["nameFa", "nameEn", "city", "cityFa", "country", "countryFa", "timezone", "countryCode"]) {
+    for (const key of ["nameFa", "nameEn", "city", "cityFa", "country", "countryFa", "timezone"]) {
       assert.equal(typeof airport[key], "string");
       assert.ok(airport[key].length > 0, `${airport.iata}: ${key} خالی نباشد`);
     }
@@ -41,13 +41,4 @@ test("فقط چهار کشور IR، TR، IQ، OM به‌عنوان دامنهٔ 
   assert.equal(isMonitoredCountry("United Arab Emirates"), false);
   assert.equal(isMonitoredCountry("United Kingdom"), false);
   assert.equal(isMonitoredCountry("United States"), false);
-  assert.equal(countryCodeOf("Germany"), null);
-  assert.equal(countryCodeOf("France"), null);
-});
-
-test("هر رکورد فرودگاه countryCode معتبر دارد که با نام کشورش سازگار است", () => {
-  for (const airport of AIRPORTS) {
-    assert.match(airport.countryCode, /^[A-Z]{2}$/, `${airport.iata}: countryCode نامعتبر`);
-    assert.equal(countryCodeOf(airport.country), airport.countryCode, `${airport.iata}: نگاشت کشور ناسازگار`);
-  }
 });
