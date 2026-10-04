@@ -1,9 +1,87 @@
+/**
+ * دادهٔ فرودگاه‌ها
+ *
+ * این فایل منبع خام داده است و شامل فرودگاه‌های متعددی از کشورهای مختلف
+ * می‌شود. دامنهٔ عملیاتی سیستم (Monitoring / Search / Route / History)
+ * فقط چهار کشور «ایران، ترکیه، عراق، عمان» است و این محدودیت در لایهٔ
+ * src/lib/airports.js و src/lib/monitoring-scope.js اعمال می‌شود.
+ *
+ * بنابراین نگه‌داشتن دادهٔ کامل در این فایل اشکالی ندارد؛ هیچ‌کدام از این
+ * رکوردهای خارج از scope هرگز به UI، آمار، Alert یا History راه پیدا
+ * نمی‌کنند.
+ *
+ * مقادیر timezone شناسه‌های IANA هستند.
+ */
+
+const COUNTRY_CODE_BY_NAME = Object.freeze({
+  Iran: "IR",
+  Türkiye: "TR",
+  Iraq: "IQ",
+  Oman: "OM",
+  Qatar: "QA",
+  "United Arab Emirates": "AE",
+  Bahrain: "BH",
+  Kuwait: "KW",
+  "Saudi Arabia": "SA",
+  Egypt: "EG",
+  Jordan: "JO",
+  Thailand: "TH",
+  Singapore: "SG",
+  Malaysia: "MY",
+  India: "IN",
+  "Sri Lanka": "LK",
+  "United Kingdom": "GB",
+  France: "FR",
+  Germany: "DE",
+  Netherlands: "NL",
+  Italy: "IT",
+  Spain: "ES",
+  Austria: "AT",
+  Switzerland: "CH",
+  Greece: "GR",
+  Belgium: "BE",
+  "United States": "US",
+  Canada: "CA",
+  Japan: "JP",
+  "Hong Kong": "HK",
+  "South Korea": "KR",
+  Ethiopia: "ET",
+  Kenya: "KE",
+  Brazil: "BR",
+  Argentina: "AR",
+  Australia: "AU",
+  China: "CN",
+});
+
+function withCountryCode(record) {
+  const code = COUNTRY_CODE_BY_NAME[record.country];
+  return code ? { ...record, countryCode: code } : record;
+}
+
 export const AIRPORTS = [
   { iata: "IKA", icao: "OIIE", nameFa: "فرودگاه بین‌المللی امام خمینی", nameEn: "Imam Khomeini International Airport", city: "Tehran", cityFa: "تهران", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["IKA", "THR"] },
   { iata: "THR", icao: "OIII", nameFa: "فرودگاه مهرآباد", nameEn: "Mehrabad International Airport", city: "Tehran", cityFa: "تهران", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["IKA", "THR"] },
+  { iata: "MHD", icao: "OIMM", nameFa: "فرودگاه بین‌المللی مشهد", nameEn: "Mashhad International Airport", city: "Mashhad", cityFa: "مشهد", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["MHD"] },
+  { iata: "SYZ", icao: "OISS", nameFa: "فرودگاه بین‌المللی شیراز", nameEn: "Shiraz International Airport", city: "Shiraz", cityFa: "شیراز", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["SYZ"] },
+  { iata: "IFN", icao: "OIFM", nameFa: "فرودگاه بین‌المللی اصفهان", nameEn: "Isfahan International Airport", city: "Isfahan", cityFa: "اصفهان", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["IFN"] },
+  { iata: "TBZ", icao: "OITT", nameFa: "فرودگاه بین‌المللی تبریز", nameEn: "Tabriz International Airport", city: "Tabriz", cityFa: "تبریز", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["TBZ"] },
+  { iata: "BND", icao: "OIKB", nameFa: "فرودگاه بین‌المللی بندرعباس", nameEn: "Bandar Abbas International Airport", city: "Bandar Abbas", cityFa: "بندرعباس", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["BND"] },
+  { iata: "KIH", icao: "OIBK", nameFa: "فرودگاه بین‌المللی کیش", nameEn: "Kish International Airport", city: "Kish", cityFa: "کیش", country: "Iran", countryFa: "ایران", timezone: "Asia/Tehran", cityAirports: ["KIH"] },
+
   { iata: "IST", icao: "LTFM", nameFa: "فرودگاه استانبول", nameEn: "Istanbul Airport", city: "Istanbul", cityFa: "استانبول", country: "Türkiye", countryFa: "ترکیه", timezone: "Europe/Istanbul", cityAirports: ["IST", "SAW"] },
   { iata: "SAW", icao: "LTFJ", nameFa: "فرودگاه صبیحه گوکچن", nameEn: "Istanbul Sabiha Gokcen International Airport", city: "Istanbul", cityFa: "استانبول", country: "Türkiye", countryFa: "ترکیه", timezone: "Europe/Istanbul", cityAirports: ["IST", "SAW"] },
+  { iata: "AYT", icao: "LTAI", nameFa: "فرودگاه آنتالیا", nameEn: "Antalya Airport", city: "Antalya", cityFa: "آنتالیا", country: "Türkiye", countryFa: "ترکیه", timezone: "Europe/Istanbul", cityAirports: ["AYT"] },
+  { iata: "ADB", icao: "LTBJ", nameFa: "فرودگاه عدنان مندرس ازمیر", nameEn: "İzmir Adnan Menderes Airport", city: "Izmir", cityFa: "ازمیر", country: "Türkiye", countryFa: "ترکیه", timezone: "Europe/Istanbul", cityAirports: ["ADB"] },
+  { iata: "ESB", icao: "LTAC", nameFa: "فرودگاه آنکارا اسن‌بوغا", nameEn: "Ankara Esenboğa Airport", city: "Ankara", cityFa: "آنکارا", country: "Türkiye", countryFa: "ترکیه", timezone: "Europe/Istanbul", cityAirports: ["ESB"] },
+
+  { iata: "BGW", icao: "ORBI", nameFa: "فرودگاه بین‌المللی بغداد", nameEn: "Baghdad International Airport", city: "Baghdad", cityFa: "بغداد", country: "Iraq", countryFa: "عراق", timezone: "Asia/Baghdad", cityAirports: ["BGW"] },
+  { iata: "BSR", icao: "ORMM", nameFa: "فرودگاه بین‌المللی بصره", nameEn: "Basra International Airport", city: "Basra", cityFa: "بصره", country: "Iraq", countryFa: "عراق", timezone: "Asia/Baghdad", cityAirports: ["BSR"] },
+  { iata: "EBL", icao: "ORER", nameFa: "فرودگاه بین‌المللی اربیل", nameEn: "Erbil International Airport", city: "Erbil", cityFa: "اربیل", country: "Iraq", countryFa: "عراق", timezone: "Asia/Baghdad", cityAirports: ["EBL"] },
+  { iata: "NJF", icao: "ORNI", nameFa: "فرودگاه بین‌المللی نجف", nameEn: "Al Najaf International Airport", city: "Najaf", cityFa: "نجف", country: "Iraq", countryFa: "عراق", timezone: "Asia/Baghdad", cityAirports: ["NJF"] },
+
   { iata: "MCT", icao: "OOMS", nameFa: "فرودگاه بین‌المللی مسقط", nameEn: "Muscat International Airport", city: "Muscat", cityFa: "مسقط", country: "Oman", countryFa: "عمان", timezone: "Asia/Muscat", cityAirports: ["MCT"] },
+  { iata: "SLL", icao: "OOSA", nameFa: "فرودگاه صلاله", nameEn: "Salalah International Airport", city: "Salalah", cityFa: "صلاله", country: "Oman", countryFa: "عمان", timezone: "Asia/Muscat", cityAirports: ["SLL"] },
+
   { iata: "DOH", icao: "OTHH", nameFa: "فرودگاه بین‌المللی حمد", nameEn: "Hamad International Airport", city: "Doha", cityFa: "دوحه", country: "Qatar", countryFa: "قطر", timezone: "Asia/Qatar", cityAirports: ["DOH"] },
   { iata: "DXB", icao: "OMDB", nameFa: "فرودگاه بین‌المللی دبی", nameEn: "Dubai International Airport", city: "Dubai", cityFa: "دبی", country: "United Arab Emirates", countryFa: "امارات متحده عربی", timezone: "Asia/Dubai", cityAirports: ["DXB", "DWC"] },
   { iata: "DWC", icao: "OMDW", nameFa: "فرودگاه بین‌المللی آل مکتوم", nameEn: "Al Maktoum International Airport", city: "Dubai", cityFa: "دبی", country: "United Arab Emirates", countryFa: "امارات متحده عربی", timezone: "Asia/Dubai", cityAirports: ["DXB", "DWC"] },
@@ -71,4 +149,4 @@ export const AIRPORTS = [
   { iata: "PKX", icao: "ZBAD", nameFa: "فرودگاه بین‌المللی پکن داکسینگ", nameEn: "Beijing Daxing International Airport", city: "Beijing", cityFa: "پکن", country: "China", countryFa: "چین", timezone: "Asia/Shanghai", cityAirports: ["PEK", "PKX"] },
   { iata: "PVG", icao: "ZSPD", nameFa: "فرودگاه بین‌المللی شانگهای پودونگ", nameEn: "Shanghai Pudong International Airport", city: "Shanghai", cityFa: "شانگهای", country: "China", countryFa: "چین", timezone: "Asia/Shanghai", cityAirports: ["PVG", "SHA"] },
   { iata: "SHA", icao: "ZSSS", nameFa: "فرودگاه شانگهای هونگچیائو", nameEn: "Shanghai Hongqiao International Airport", city: "Shanghai", cityFa: "شانگهای", country: "China", countryFa: "چین", timezone: "Asia/Shanghai", cityAirports: ["PVG", "SHA"] },
-];
+].map(withCountryCode);
