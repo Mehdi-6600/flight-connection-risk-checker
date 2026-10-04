@@ -1,0 +1,28 @@
+name: بررسی کیفیت پروژه
+
+on:
+  push:
+    branches: [main, arena/01a10627-flight-connection-risk-checker]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v7
+      - name: راه‌اندازی Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: نصب وابستگی‌های قفل‌شده
+        run: npm ci
+      - name: اجرای تست‌ها
+        run: npm test
+      - name: ساخت خروجی Production
+        run: npm run build

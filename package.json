@@ -1,0 +1,17 @@
+{
+  "name": "flight-connection-risk-checker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ابزار داخلی فارسی برای ارزیابی ریسک اتصال پروازها",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/preview.mjs",
+    "test": "node --test tests/*.test.js tests/*.test.mjs",
+    "start": "node scripts/preview.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

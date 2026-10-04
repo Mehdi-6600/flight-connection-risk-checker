@@ -1,0 +1,141 @@
+{
+  "description": "سناریوهای نمونه برای آزمون مدل؛ داده‌های پرواز/رزرو فرضی‌اند و توصیه رسمی سفر نیستند.",
+  "scenarios": [
+    {
+      "id": "short-30-minute",
+      "label": "اتصال ۳۰ دقیقه‌ای",
+      "connectionMinutes": 30,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "very-high"
+    },
+    {
+      "id": "one-hour",
+      "label": "اتصال یک‌ساعته",
+      "connectionMinutes": 60,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "high"
+    },
+    {
+      "id": "two-hour",
+      "label": "اتصال دوساعته با اطلاعات کامل",
+      "connectionMinutes": 120,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "medium"
+    },
+    {
+      "id": "four-hour",
+      "label": "اتصال چهارساعته با اطلاعات کامل",
+      "connectionMinutes": 240,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "low"
+    },
+    {
+      "id": "overnight",
+      "label": "توقف شبانه با عبور از تاریخ محلی",
+      "connectionMinutes": 900,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "low"
+    },
+    {
+      "id": "same-city-airport-change",
+      "label": "تغییر فرودگاه IST به SAW",
+      "connectionMinutes": 180,
+      "ticketType": "separate",
+      "transferType": "self",
+      "expectedLevel": "very-high"
+    },
+    {
+      "id": "separate-tickets",
+      "label": "دو بلیت جداگانه",
+      "connectionMinutes": 180,
+      "ticketType": "separate",
+      "transferType": "airside",
+      "expectedLevel": "medium"
+    },
+    {
+      "id": "single-ticket",
+      "label": "یک بلیت و بار Check-through",
+      "connectionMinutes": 180,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "medium"
+    },
+    {
+      "id": "baggage-recheck",
+      "label": "نیاز به تحویل مجدد بار",
+      "connectionMinutes": 180,
+      "ticketType": "one",
+      "transferType": "airside",
+      "baggageThrough": "no",
+      "expectedLevel": "medium"
+    },
+    {
+      "id": "immigration-terminal",
+      "label": "Immigration و تغییر ترمینال",
+      "connectionMinutes": 180,
+      "ticketType": "one",
+      "transferType": "airside",
+      "immigration": "yes",
+      "terminalChange": "yes",
+      "expectedLevel": "medium"
+    },
+    {
+      "id": "self-transfer",
+      "label": "Self-transfer",
+      "connectionMinutes": 240,
+      "ticketType": "separate",
+      "transferType": "self",
+      "expectedLevel": "high"
+    },
+    {
+      "id": "next-day",
+      "label": "پرواز دوم در روز بعد",
+      "connectionMinutes": 1500,
+      "ticketType": "one",
+      "transferType": "airside",
+      "expectedLevel": "low"
+    },
+    {
+      "id": "different-airlines",
+      "label": "ایرلاین‌های متفاوت طبق ورودی",
+      "connectionMinutes": 240,
+      "ticketType": "one",
+      "transferType": "airside",
+      "airlineRelation": "different",
+      "expectedLevel": "low"
+    },
+    {
+      "id": "delay-30",
+      "label": "تأخیر ۳۰ دقیقه‌ای",
+      "connectionMinutes": 120,
+      "delayMinutes": 30,
+      "expectedLevel": "high"
+    },
+    {
+      "id": "delay-60",
+      "label": "تأخیر ۶۰ دقیقه‌ای",
+      "connectionMinutes": 120,
+      "delayMinutes": 60,
+      "expectedLevel": "high"
+    },
+    {
+      "id": "delay-90",
+      "label": "تأخیر ۹۰ دقیقه‌ای",
+      "connectionMinutes": 120,
+      "delayMinutes": 90,
+      "expectedLevel": "very-high"
+    },
+    {
+      "id": "delay-120",
+      "label": "تأخیر ۱۲۰ دقیقه‌ای",
+      "connectionMinutes": 120,
+      "delayMinutes": 120,
+      "expectedLevel": "very-high"
+    }
+  ]
+}
