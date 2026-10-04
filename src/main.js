@@ -1,5 +1,5 @@
 import { COMMON_ROUTES } from "../data/common-routes.js";
-import { airportLabel, getAirportByIata } from "./lib/airports.js";
+import { getAirportByIata } from "./lib/airports.js";
 import { copyTextToClipboard } from "./lib/clipboard.js";
 import { CONNECTION_QUESTIONS, createConnectionAnswers, sanitizeConnectionAnswers } from "./lib/connection-questions.js";
 import { buildCustomerNotice } from "./lib/customer-notice.js";
@@ -38,7 +38,6 @@ const noticeFeedback = document.querySelector("#notice-feedback");
 const toast = document.querySelector("#toast");
 
 const ICON_PATHS = {
-  plane: ["m21 3-7.2 18-3.4-7.4L3 10.2 21 3Z"],
   clock: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z", "M12 6v6l4 2"],
   gauge: ["m12 14 4-4", "M3.34 19a10 10 0 1 1 17.32 0"],
   shield: ["M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"],
@@ -57,8 +56,6 @@ let activeAnalysis = null;
 let activeCreatedAt = null;
 let activeNotice = "";
 let toastTimer = null;
-
-/* ---------- ابزارهای عمومی DOM ---------- */
 
 function createIcon(name) {
   const svg = document.createElementNS(SVG_NAMESPACE, "svg");
@@ -106,8 +103,6 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/* ---------- پیام و اعلان ---------- */
-
 function showToast(message) {
   toast.textContent = message;
   toast.hidden = false;
@@ -124,8 +119,6 @@ function setNoticeFeedback(message) {
   noticeFeedback.textContent = message ?? "";
   noticeFeedback.hidden = !message;
 }
-
-/* ---------- تم ---------- */
 
 function readStoredTheme() {
   try {
@@ -158,43 +151,35 @@ function initializeTheme() {
   });
 }
 
-/* ---------- Route Builder: سه باکس کشوری/شهری/فرودگاهی ---------- */
+/* ---------- Route Builder ---------- */
 
 const LEGS = ["origin", "connection", "destination"];
-
-function fillCountrySelect(select) {
-  const fragment = document.createDocumentFragment();
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "— انتخاب کنید —";
-  fragment.append(placeholder);
-  for (const country of ROUTE_TREE) {
-    const option = document.createElement("option");
-    option.value = country.code;
-    option.textContent = `${country.nameFa}`;
-    fragment.append(option);
-  }
-  select.replaceChildren(fragment);
-}
-
-function resetLeg(leg, { keepCountry = false } = {}) {
-  const countrySelect = document.getElementById(`${leg}-country`);
-  const citySelect = document.getElementById(`${leg}-city`);
-  const airportSelect = document.getElementById(`${leg}-airport`);
-  if (!keepCountry) countrySelect.value = "";
-  citySelect.value = "";
-  airportSelect.value = "";
-  citySelect.disabled = true;
-  airportSelect.disabled = true;
-  citySelect.replaceChildren(newOption("", "— ابتدا کشور را انتخاب کنید —"));
-  airportSelect.replaceChildren(newOption("", "— ابتدا شهر را انتخاب کنید —"));
-}
 
 function newOption(value, text) {
   const option = document.createElement("option");
   option.value = value;
   option.textContent = text;
   return option;
+}
+
+function fillCountrySelect(select) {
+  const fragment = document.createDocumentFragment();
+  fragment.append(newOption("", "— انتخاب کنید —"));
+  for (const country of ROUTE_TREE) {
+    fragment.append(newOption(country.code, country.nameFa));
+  }
+  select.replaceChildren(fragment);
+}
+
+function resetLegSelects(leg) {
+  const citySelect = document.getElementById(`${leg}-city`);
+  const airportSelect = document.getElementById(`${leg}-airport`);
+  citySelect.value = "";
+  airportSelect.value = "";
+  citySelect.disabled = true;
+  airportSelect.disabled = true;
+  citySelect.replaceChildren(newOption("", "— ابتدا کشور را انتخاب کنید —"));
+  airportSelect.replaceChildren(newOption("", "— ابتدا شهر را انتخاب کنید —"));
 }
 
 function populateCities(leg) {
@@ -290,8 +275,6 @@ function initializeRouteBuilder() {
   }
 }
 
-/* ---------- خطاهای باکس‌ها ---------- */
-
 function clearLegError(leg) {
   const errorEl = document.querySelector(`[data-error-for="${leg}"]`);
   if (errorEl) {
@@ -312,7 +295,7 @@ function showLegError(leg, message) {
   }
 }
 
-/* ---------- مسیرهای پرتکرار (چیپ) ---------- */
+/* ---------- Frequent Routes ---------- */
 
 function createRouteChip(route) {
   const chip = document.createElement("button");
@@ -327,10 +310,7 @@ function createRouteChip(route) {
 function renderFrequentRoutes() {
   const fragment = document.createDocumentFragment();
   for (const route of COMMON_ROUTES) {
-    fragment.append(createRouteChip({
-      id: route.id,
-      iatas: route.airports,
-    }));
+    fragment.append(createRouteChip({ id: route.id, iatas: route.airports }));
   }
   frequentRoutesChips.replaceChildren(fragment);
 }
@@ -349,7 +329,6 @@ function renderRecentRoutes() {
 }
 
 function applyRouteToBuilder(iatas) {
-  // iatas: [origin, arrivalAirport, departureAirport, destination]
   const [originCode, arrivalCode, departureCode, destinationCode] = iatas;
   const origin = getAirportByIata(originCode);
   const arrival = getAirportByIata(arrivalCode);
@@ -357,21 +336,18 @@ function applyRouteToBuilder(iatas) {
   const destination = getAirportByIata(destinationCode);
   if (!origin || !arrival || !departure || !destination) return;
 
-  // Leg 1
   document.getElementById("origin-country").value = origin.countryCode;
   populateCities("origin");
   document.getElementById("origin-city").value = origin.city;
   populateAirports("origin");
   document.getElementById("origin-airport").value = origin.iata;
 
-  // Leg 2 (arrival airport)
   document.getElementById("connection-country").value = arrival.countryCode;
   populateCities("connection");
   document.getElementById("connection-city").value = arrival.city;
   populateAirports("connection");
   document.getElementById("connection-airport").value = arrival.iata;
 
-  // Leg 3 (final destination)
   document.getElementById("destination-country").value = destination.countryCode;
   populateCities("destination");
   document.getElementById("destination-city").value = destination.city;
@@ -395,7 +371,7 @@ function handleRouteChipClick(event) {
   applyRouteToBuilder(preset.iatas);
 }
 
-/* ---------- شرایط اتصال ---------- */
+/* ---------- Conditions ---------- */
 
 function initializeConditions() {
   const fragment = document.createDocumentFragment();
@@ -441,7 +417,7 @@ function setDefaultDates() {
   }
 }
 
-/* ---------- جمع‌آوری ورودی ---------- */
+/* ---------- Form input ---------- */
 
 const TIME_FIELDS = [
   ["flight1-departure-date", "تاریخ خروج پرواز اول"],
@@ -490,18 +466,9 @@ function collectFormInput() {
     const city = document.getElementById(`${leg}-city`).value;
     const iata = document.getElementById(`${leg}-airport`).value;
 
-    if (!country) {
-      errors.push({ type: "leg", leg, message: `کشور برای «${legLabel(leg)}» انتخاب نشده است.` });
-      continue;
-    }
-    if (!city) {
-      errors.push({ type: "leg", leg, message: `شهر برای «${legLabel(leg)}» انتخاب نشده است.` });
-      continue;
-    }
-    if (!iata) {
-      errors.push({ type: "leg", leg, message: `فرودگاه برای «${legLabel(leg)}» انتخاب نشده است.` });
-      continue;
-    }
+    if (!country) { errors.push({ type: "leg", leg, message: `کشور برای «${legLabel(leg)}» انتخاب نشده است.` }); continue; }
+    if (!city)    { errors.push({ type: "leg", leg, message: `شهر برای «${legLabel(leg)}» انتخاب نشده است.` }); continue; }
+    if (!iata)    { errors.push({ type: "leg", leg, message: `فرودگاه برای «${legLabel(leg)}» انتخاب نشده است.` }); continue; }
     airports[leg] = getAirportByIata(iata);
   }
 
@@ -513,9 +480,7 @@ function collectFormInput() {
   if (Object.keys(airports).length === LEGS.length && !errors.some((e) => e.type === "field")) {
     const input = buildInput(airports.origin, airports.connection, airports.destination);
     const timing = resolveFlightTimes(input);
-    if (!timing.ok) {
-      errors.push({ type: "field", field: timing.field ?? "flight1-arrival-time", message: timing.error });
-    }
+    if (!timing.ok) errors.push({ type: "field", field: timing.field ?? "flight1-arrival-time", message: timing.error });
   }
 
   return {
@@ -528,16 +493,11 @@ function legLabel(leg) {
   return leg === "origin" ? "مبدأ" : leg === "connection" ? "مقصد اول" : "مقصد دوم";
 }
 
-/* ---------- نمایش خطاها ---------- */
-
 function clearFormErrors() {
   formErrorSummary.hidden = true;
   formErrorList.replaceChildren();
   form.querySelectorAll("[aria-invalid='true']").forEach((f) => f.removeAttribute("aria-invalid"));
-  form.querySelectorAll(".field-error").forEach((m) => {
-    m.textContent = "";
-    m.classList.remove("is-visible");
-  });
+  form.querySelectorAll(".field-error").forEach((m) => { m.textContent = ""; m.classList.remove("is-visible"); });
   for (const leg of LEGS) clearLegError(leg);
 }
 
@@ -553,17 +513,13 @@ function showFormErrors(errors) {
 
     if (error.type === "leg") {
       showLegError(error.leg, error.message);
-      const legCard = document.getElementById(`leg-${error.leg}`);
-      if (legCard && !firstField) firstField = legCard;
+      if (!firstField) firstField = document.getElementById(`leg-${error.leg}`);
     } else if (error.field) {
       const field = document.getElementById(error.field);
       if (field) {
         field.setAttribute("aria-invalid", "true");
         const message = document.querySelector(`[data-error-for="${error.field}"]`);
-        if (message) {
-          message.textContent = error.message;
-          message.classList.add("is-visible");
-        }
+        if (message) { message.textContent = error.message; message.classList.add("is-visible"); }
         if (!firstField) firstField = field;
       }
     }
@@ -573,12 +529,10 @@ function showFormErrors(errors) {
   if (firstField) firstField.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
 }
 
-/* ---------- پیش‌نمایش زنده ---------- */
-
 function updateConnectionTimeline() {
   const arrival = getLegAirport("connection");
-  const departure = getLegAirport("connection");
   const destination = getLegAirport("destination");
+  const origin = getLegAirport("origin");
 
   setText("#timeline-flight1-destination", arrival ? arrival.iata : "-");
   setText("#timeline-flight2-origin", destination ? destination.iata : "-");
@@ -586,28 +540,23 @@ function updateConnectionTimeline() {
   setText("#timeline-flight2-departure", depTime ? toPersianDigits(depTime) : "--:--");
 
   let connectionLabel = "--:--";
-  if (arrival && destination) {
-    const origin = getLegAirport("origin");
-    if (origin) {
-      const timing = resolveFlightTimes({
-        flight1: {
-          origin,
-          destination: arrival,
-          departureDate: valueOf("flight1-departure-date"),
-          departureTime: valueOf("flight1-departure-time"),
-          arrivalDate: valueOf("flight1-arrival-date"),
-          arrivalTime: valueOf("flight1-arrival-time"),
-        },
-        flight2: {
-          origin: arrival,
-          destination,
-          departureDate: valueOf("flight2-departure-date"),
-          departureTime: valueOf("flight2-departure-time"),
-        },
-        connection: connectionAnswers,
-      });
-      if (timing.ok) connectionLabel = formatDuration(timing.connectionMinutes, { compact: true });
-    }
+  if (origin && arrival && destination) {
+    const timing = resolveFlightTimes({
+      flight1: {
+        origin, destination: arrival,
+        departureDate: valueOf("flight1-departure-date"),
+        departureTime: valueOf("flight1-departure-time"),
+        arrivalDate: valueOf("flight1-arrival-date"),
+        arrivalTime: valueOf("flight1-arrival-time"),
+      },
+      flight2: {
+        origin: arrival, destination,
+        departureDate: valueOf("flight2-departure-date"),
+        departureTime: valueOf("flight2-departure-time"),
+      },
+      connection: connectionAnswers,
+    });
+    if (timing.ok) connectionLabel = formatDuration(timing.connectionMinutes, { compact: true });
   }
   setText("#timeline-connection-time", connectionLabel);
 }
@@ -621,7 +570,7 @@ function paintTimeline(levelId) {
   }
 }
 
-/* ---------- رندر نتیجه ---------- */
+/* ---------- Result rendering ---------- */
 
 function riskVariant(levelId) {
   return ["low", "medium", "high", "very-high"].includes(levelId) ? levelId : "medium";
@@ -805,7 +754,7 @@ function renderAnalysis(input, analysis, createdAt = new Date().toISOString()) {
   setNoticeFeedback("");
 }
 
-/* ---------- تاریخچه ---------- */
+/* ---------- History ---------- */
 
 function safeReadHistory() {
   try {
@@ -881,7 +830,7 @@ function renderHistory() {
   historyList.replaceChildren(fragment);
 }
 
-/* ---------- کپی و چاپ ---------- */
+/* ---------- Copy / Print ---------- */
 
 function makeCopyText() {
   if (!activeAnalysis || !activeInput) return "";
@@ -934,7 +883,7 @@ async function copyNotice() {
   }
 }
 
-/* ---------- رویدادها ---------- */
+/* ---------- Events ---------- */
 
 function setAnalyzing(state) {
   analyzeButton.classList.toggle("loading", state);
@@ -1051,7 +1000,7 @@ window.addEventListener("scroll", () => {
   siteHeader.classList.toggle("scrolled", window.scrollY > 8);
 }, { passive: true });
 
-/* ---------- راه‌اندازی ---------- */
+/* ---------- Init ---------- */
 
 initializeTheme();
 initializeRouteBuilder();
