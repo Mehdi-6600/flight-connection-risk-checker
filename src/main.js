@@ -1,11 +1,11 @@
 import { COMMON_ROUTES } from "../data/common-routes.js";
-import { airportLabel, getAirportByIata, listAirports, resolveAirport } from "./lib/airports.js";
+import { airportLabel, getAirportByIata } from "./lib/airports.js";
 import { copyTextToClipboard } from "./lib/clipboard.js";
 import { CONNECTION_QUESTIONS, createConnectionAnswers, sanitizeConnectionAnswers } from "./lib/connection-questions.js";
 import { buildCustomerNotice } from "./lib/customer-notice.js";
 import { evaluateConnection, resolveFlightTimes, simulateDelays } from "./lib/risk-engine/engine.js";
-import { MONITORED_COUNTRIES, isMonitoredCountry } from "./lib/monitoring-scope.js";
-import { buildQuickRouteChips, groupAirportsByCountry, pushRecentRoute, readRecentRoutes } from "./lib/routes.js";
+import { ROUTE_TREE, findCity, findCountry } from "./lib/route-builder.js";
+import { pushRecentRoute, readRecentRoutes } from "./lib/routes.js";
 import { formatDuration, formatPersianDate, toPersianDigits } from "./lib/time.js";
 
 const HISTORY_KEY = "flight-connection-risk-checker.history.v1";
@@ -18,15 +18,14 @@ const formErrorSummary = document.querySelector("#form-error-summary");
 const formErrorList = document.querySelector("#form-error-list");
 const resultSection = document.querySelector("#result-section");
 const resultPanel = document.querySelector("#result-panel");
-const emptyResult = document.querySelector("#empty-result");
 const analyzeButton = document.querySelector("#analyze-button");
 const analyzeButtonText = document.querySelector("#analyze-button-text");
 const analyzeButtonLoading = document.querySelector("#analyze-button-loading");
 const themeToggle = document.querySelector("#theme-toggle");
 const siteHeader = document.querySelector("#site-header");
-const quickRoutesCarousel = document.querySelector("#quick-routes-carousel");
+const frequentRoutesChips = document.querySelector("#frequent-routes-chips");
 const recentRoutesSection = document.querySelector("#recent-routes-section");
-const recentRoutesCarousel = document.querySelector("#recent-routes-carousel");
+const recentRoutesChips = document.querySelector("#recent-routes-chips");
 const conditionsContainer = document.querySelector("#connection-conditions");
 const historyList = document.querySelector("#history-list");
 const historyEmpty = document.querySelector("#history-empty");
@@ -38,10 +37,8 @@ const copyNoticeButton = document.querySelector("#copy-notice-button");
 const noticeFeedback = document.querySelector("#notice-feedback");
 const toast = document.querySelector("#toast");
 
-const ICON_PATHS = Object.freeze({
+const ICON_PATHS = {
   plane: ["m21 3-7.2 18-3.4-7.4L3 10.2 21 3Z"],
-  arrow: ["M5 12h14", "m12 5 7 7-7 7"],
-  info: ["M12 16v-4", "M12 8h.01", "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"],
   clock: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z", "M12 6v6l4 2"],
   gauge: ["m12 14 4-4", "M3.34 19a10 10 0 1 1 17.32 0"],
   shield: ["M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"],
@@ -52,10 +49,7 @@ const ICON_PATHS = Object.freeze({
   moon: ["M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"],
   calendar: ["M8 2v4M16 2v4", "M3 10h18", "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"],
   warning: ["M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z", "M12 9v4", "M12 17h.01"],
-  star: ["m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"],
-  history: ["M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.36 2.64L3 8", "M3 3v5h5", "M12 7v5l3 2"],
-  document: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M16 13H8", "M16 17H8", "M10 9H8"],
-});
+};
 
 let connectionAnswers = createConnectionAnswers();
 let activeInput = null;
@@ -63,7 +57,6 @@ let activeAnalysis = null;
 let activeCreatedAt = null;
 let activeNotice = "";
 let toastTimer = null;
-let secondOriginMirrored = false;
 
 /* ---------- ابزارهای عمومی DOM ---------- */
 
@@ -113,21 +106,13 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function countryFlagFor(airport) {
-  if (!airport) return "";
-  const found = MONITORED_COUNTRIES.find((c) => c.nameFa === airport.countryFa);
-  return found?.flag ?? "";
-}
-
 /* ---------- پیام و اعلان ---------- */
 
 function showToast(message) {
   toast.textContent = message;
   toast.hidden = false;
   window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => {
-    toast.hidden = true;
-  }, 3200);
+  toastTimer = window.setTimeout(() => { toast.hidden = true; }, 3200);
 }
 
 function setCopyFeedback(message) {
@@ -140,23 +125,17 @@ function setNoticeFeedback(message) {
   noticeFeedback.hidden = !message;
 }
 
-/* ---------- تم روشن/تاریک ---------- */
+/* ---------- تم ---------- */
 
 function readStoredTheme() {
   try {
     const value = window.localStorage.getItem(THEME_KEY);
     return value === "dark" || value === "light" ? value : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function storeTheme(theme) {
-  try {
-    window.localStorage.setItem(THEME_KEY, theme);
-  } catch {
-    // اختیاری
-  }
+  try { window.localStorage.setItem(THEME_KEY, theme); } catch {}
 }
 
 function applyTheme(theme) {
@@ -165,7 +144,6 @@ function applyTheme(theme) {
   const isDark = theme === "dark";
   themeToggle.setAttribute("aria-pressed", String(isDark));
   themeToggle.setAttribute("aria-label", isDark ? "تغییر به حالت روشن" : "تغییر به حالت تاریک");
-  themeToggle.setAttribute("title", isDark ? "حالت روشن" : "حالت تاریک");
   themeToggle.replaceChildren(createIcon(isDark ? "moon" : "sun"));
 }
 
@@ -180,73 +158,244 @@ function initializeTheme() {
   });
 }
 
-/* ---------- مقداردهی اولیهٔ فرم ---------- */
+/* ---------- Route Builder: سه باکس کشوری/شهری/فرودگاهی ---------- */
 
-function initializeAirportOptions() {
-  const datalist = document.querySelector("#airport-options");
-  if (!datalist) return;
+const LEGS = ["origin", "connection", "destination"];
+
+function fillCountrySelect(select) {
   const fragment = document.createDocumentFragment();
-  for (const airport of listAirports()) {
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "— انتخاب کنید —";
+  fragment.append(placeholder);
+  for (const country of ROUTE_TREE) {
     const option = document.createElement("option");
-    option.value = airportLabel(airport);
-    option.label = `${countryFlagFor(airport)} ${airport.iata} · ${airport.nameFa} · ${airport.cityFa}`;
+    option.value = country.code;
+    option.textContent = `${country.nameFa}`;
     fragment.append(option);
   }
-  datalist.replaceChildren(fragment);
+  select.replaceChildren(fragment);
 }
 
-function createRouteCard(route) {
-  const card = document.createElement("button");
-  card.type = "button";
-  card.className = "quick-route-card";
-  card.dataset.routeId = route.id;
-
-  const header = document.createElement("div");
-  header.className = "quick-route-card-header";
-  const icon = document.createElement("span");
-  icon.className = "quick-route-icon";
-  icon.append(createIcon("plane"));
-  header.append(icon);
-  appendTextElement(header, "span", "quick-route-name", route.label);
-
-  const path = document.createElement("div");
-  path.className = "quick-route-path";
-  const pathText = route.iatas
-    .filter((code, index, arr) => index === 0 || code !== arr[index - 1])
-    .join(" → ");
-  appendTextElement(path, "span", "quick-route-path-codes", pathText);
-
-  const countriesLine = document.createElement("div");
-  countriesLine.className = "quick-route-countries";
-  const uniqueCountries = new Set(route.iatas.map((code) => getAirportByIata(code)?.countryFa).filter(Boolean));
-  countriesLine.textContent = [...uniqueCountries].join(" · ");
-
-  card.append(header, path, countriesLine);
-  return card;
+function resetLeg(leg, { keepCountry = false } = {}) {
+  const countrySelect = document.getElementById(`${leg}-country`);
+  const citySelect = document.getElementById(`${leg}-city`);
+  const airportSelect = document.getElementById(`${leg}-airport`);
+  if (!keepCountry) countrySelect.value = "";
+  citySelect.value = "";
+  airportSelect.value = "";
+  citySelect.disabled = true;
+  airportSelect.disabled = true;
+  citySelect.replaceChildren(newOption("", "— ابتدا کشور را انتخاب کنید —"));
+  airportSelect.replaceChildren(newOption("", "— ابتدا شهر را انتخاب کنید —"));
 }
 
-function initializeQuickRoutes() {
+function newOption(value, text) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = text;
+  return option;
+}
+
+function populateCities(leg) {
+  const countrySelect = document.getElementById(`${leg}-country`);
+  const citySelect = document.getElementById(`${leg}-city`);
+  const airportSelect = document.getElementById(`${leg}-airport`);
+  const code = countrySelect.value;
+
+  citySelect.value = "";
+  airportSelect.value = "";
+  airportSelect.disabled = true;
+  airportSelect.replaceChildren(newOption("", "— ابتدا شهر را انتخاب کنید —"));
+
+  if (!code) {
+    citySelect.disabled = true;
+    citySelect.replaceChildren(newOption("", "— ابتدا کشور را انتخاب کنید —"));
+    return;
+  }
+
+  const country = findCountry(code);
+  if (!country) {
+    citySelect.disabled = true;
+    citySelect.replaceChildren(newOption("", "— کشوری یافت نشد —"));
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  fragment.append(newOption("", "— انتخاب شهر —"));
+  for (const city of country.cities) {
+    fragment.append(newOption(city.city, city.cityFa));
+  }
+  citySelect.replaceChildren(fragment);
+  citySelect.disabled = false;
+}
+
+function populateAirports(leg) {
+  const citySelect = document.getElementById(`${leg}-city`);
+  const airportSelect = document.getElementById(`${leg}-airport`);
+  const countryCode = document.getElementById(`${leg}-country`).value;
+  const cityName = citySelect.value;
+
+  airportSelect.value = "";
+
+  if (!cityName || !countryCode) {
+    airportSelect.disabled = true;
+    airportSelect.replaceChildren(newOption("", "— ابتدا شهر را انتخاب کنید —"));
+    return;
+  }
+
+  const city = findCity(countryCode, cityName);
+  if (!city) {
+    airportSelect.disabled = true;
+    airportSelect.replaceChildren(newOption("", "— شهری یافت نشد —"));
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  if (city.airports.length > 1) {
+    fragment.append(newOption("", "— انتخاب فرودگاه —"));
+  }
+  for (const airport of city.airports) {
+    fragment.append(newOption(airport.iata, `${airport.iata} — ${airport.nameFa}`));
+  }
+  airportSelect.replaceChildren(fragment);
+
+  if (city.airports.length === 1) {
+    airportSelect.value = city.airports[0].iata;
+  }
+  airportSelect.disabled = false;
+  updateConnectionTimeline();
+}
+
+function initializeRouteBuilder() {
+  for (const leg of LEGS) {
+    const countrySelect = document.getElementById(`${leg}-country`);
+    const citySelect = document.getElementById(`${leg}-city`);
+    const airportSelect = document.getElementById(`${leg}-airport`);
+
+    fillCountrySelect(countrySelect);
+
+    countrySelect.addEventListener("change", () => {
+      populateCities(leg);
+      clearLegError(leg);
+    });
+    citySelect.addEventListener("change", () => {
+      populateAirports(leg);
+      clearLegError(leg);
+    });
+    airportSelect.addEventListener("change", () => {
+      clearLegError(leg);
+      updateConnectionTimeline();
+    });
+  }
+}
+
+/* ---------- خطاهای باکس‌ها ---------- */
+
+function clearLegError(leg) {
+  const errorEl = document.querySelector(`[data-error-for="${leg}"]`);
+  if (errorEl) {
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+  }
+  for (const level of ["country", "city", "airport"]) {
+    const field = document.getElementById(`${leg}-${level}`);
+    if (field) field.removeAttribute("aria-invalid");
+  }
+}
+
+function showLegError(leg, message) {
+  const errorEl = document.querySelector(`[data-error-for="${leg}"]`);
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+}
+
+/* ---------- مسیرهای پرتکرار (چیپ) ---------- */
+
+function createRouteChip(route) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "route-chip";
+  chip.dataset.routeId = route.id;
+  const codes = route.iatas.filter((code, i, arr) => i === 0 || code !== arr[i - 1]);
+  chip.textContent = codes.join(" → ");
+  return chip;
+}
+
+function renderFrequentRoutes() {
   const fragment = document.createDocumentFragment();
   for (const route of COMMON_ROUTES) {
-    fragment.append(createRouteCard({ id: route.id, label: route.label, iatas: route.airports }));
+    fragment.append(createRouteChip({
+      id: route.id,
+      iatas: route.airports,
+    }));
   }
-  if (quickRoutesCarousel) quickRoutesCarousel.replaceChildren(fragment);
-  renderRecentRoutes();
+  frequentRoutesChips.replaceChildren(fragment);
 }
 
 function renderRecentRoutes() {
-  if (!recentRoutesSection || !recentRoutesCarousel) return;
   const recent = readRecentRoutes();
   if (!recent.length) {
     recentRoutesSection.hidden = true;
-    recentRoutesCarousel.replaceChildren();
+    recentRoutesChips.replaceChildren();
     return;
   }
   recentRoutesSection.hidden = false;
   const fragment = document.createDocumentFragment();
-  for (const route of recent) fragment.append(createRouteCard(route));
-  recentRoutesCarousel.replaceChildren(fragment);
+  for (const route of recent) fragment.append(createRouteChip(route));
+  recentRoutesChips.replaceChildren(fragment);
 }
+
+function applyRouteToBuilder(iatas) {
+  // iatas: [origin, arrivalAirport, departureAirport, destination]
+  const [originCode, arrivalCode, departureCode, destinationCode] = iatas;
+  const origin = getAirportByIata(originCode);
+  const arrival = getAirportByIata(arrivalCode);
+  const departure = getAirportByIata(departureCode);
+  const destination = getAirportByIata(destinationCode);
+  if (!origin || !arrival || !departure || !destination) return;
+
+  // Leg 1
+  document.getElementById("origin-country").value = origin.countryCode;
+  populateCities("origin");
+  document.getElementById("origin-city").value = origin.city;
+  populateAirports("origin");
+  document.getElementById("origin-airport").value = origin.iata;
+
+  // Leg 2 (arrival airport)
+  document.getElementById("connection-country").value = arrival.countryCode;
+  populateCities("connection");
+  document.getElementById("connection-city").value = arrival.city;
+  populateAirports("connection");
+  document.getElementById("connection-airport").value = arrival.iata;
+
+  // Leg 3 (final destination)
+  document.getElementById("destination-country").value = destination.countryCode;
+  populateCities("destination");
+  document.getElementById("destination-city").value = destination.city;
+  populateAirports("destination");
+  document.getElementById("destination-airport").value = destination.iata;
+
+  updateConnectionTimeline();
+  showToast("مسیر انتخاب شد. تاریخ و ساعت را وارد کنید.");
+}
+
+function handleRouteChipClick(event) {
+  const target = event.target instanceof Element ? event.target : null;
+  const chip = target?.closest(".route-chip");
+  if (!chip) return;
+  const allRoutes = [
+    ...COMMON_ROUTES.map((r) => ({ id: r.id, iatas: r.airports })),
+    ...readRecentRoutes(),
+  ];
+  const preset = allRoutes.find((route) => route.id === chip.dataset.routeId);
+  if (!preset) return;
+  applyRouteToBuilder(preset.iatas);
+}
+
+/* ---------- شرایط اتصال ---------- */
 
 function initializeConditions() {
   const fragment = document.createDocumentFragment();
@@ -292,29 +441,27 @@ function setDefaultDates() {
   }
 }
 
-/* ---------- جمع‌آوری و اعتبارسنجی ورودی ---------- */
+/* ---------- جمع‌آوری ورودی ---------- */
 
-const AIRPORT_FIELDS = Object.freeze([
-  ["flight1-origin", "مبدأ پرواز اول"],
-  ["flight1-destination", "فرودگاه ورود پرواز اول"],
-  ["flight2-origin", "فرودگاه حرکت پرواز دوم"],
-  ["flight2-destination", "مقصد نهایی"],
-]);
-
-const REQUIRED_FIELDS = Object.freeze([
+const TIME_FIELDS = [
   ["flight1-departure-date", "تاریخ خروج پرواز اول"],
   ["flight1-departure-time", "ساعت خروج پرواز اول"],
   ["flight1-arrival-date", "تاریخ ورود پرواز اول"],
   ["flight1-arrival-time", "ساعت ورود پرواز اول"],
   ["flight2-departure-date", "تاریخ خروج پرواز دوم"],
   ["flight2-departure-time", "ساعت خروج پرواز دوم"],
-]);
+];
 
-function buildInput(airports) {
+function getLegAirport(leg) {
+  const iata = document.getElementById(`${leg}-airport`).value;
+  return iata ? getAirportByIata(iata) : null;
+}
+
+function buildInput(origin, connection, destination) {
   return {
     flight1: {
-      origin: airports["flight1-origin"],
-      destination: airports["flight1-destination"],
+      origin,
+      destination: connection,
       departureDate: valueOf("flight1-departure-date"),
       departureTime: valueOf("flight1-departure-time"),
       arrivalDate: valueOf("flight1-arrival-date"),
@@ -323,8 +470,8 @@ function buildInput(airports) {
       flightNumber: valueOf("flight1-number"),
     },
     flight2: {
-      origin: airports["flight2-origin"],
-      destination: airports["flight2-destination"],
+      origin: connection,
+      destination,
       departureDate: valueOf("flight2-departure-date"),
       departureTime: valueOf("flight2-departure-time"),
       airline: valueOf("flight2-airline"),
@@ -336,121 +483,131 @@ function buildInput(airports) {
 
 function collectFormInput() {
   const errors = [];
-  const resolvedAirports = {};
+  const airports = {};
 
-  for (const [id, label] of AIRPORT_FIELDS) {
+  for (const leg of LEGS) {
+    const country = document.getElementById(`${leg}-country`).value;
+    const city = document.getElementById(`${leg}-city`).value;
+    const iata = document.getElementById(`${leg}-airport`).value;
+
+    if (!country) {
+      errors.push({ type: "leg", leg, message: `کشور برای «${legLabel(leg)}» انتخاب نشده است.` });
+      continue;
+    }
+    if (!city) {
+      errors.push({ type: "leg", leg, message: `شهر برای «${legLabel(leg)}» انتخاب نشده است.` });
+      continue;
+    }
+    if (!iata) {
+      errors.push({ type: "leg", leg, message: `فرودگاه برای «${legLabel(leg)}» انتخاب نشده است.` });
+      continue;
+    }
+    airports[leg] = getAirportByIata(iata);
+  }
+
+  for (const [id, label] of TIME_FIELDS) {
     const field = document.getElementById(id);
-    const resolution = resolveAirport(field.value);
-    if (resolution.status === "empty") {
-      errors.push({ field: id, message: `«${label}» را وارد کنید.` });
-    } else if (resolution.status === "ambiguous") {
-      errors.push({ field: id, message: `برای «${label}» چند فرودگاه پیدا شد؛ کد IATA را از پیشنهادها انتخاب کنید.` });
-    } else if (resolution.status !== "matched") {
-      errors.push({ field: id, message: `«${label}» در فهرست فرودگاه‌های مجاز (ایران، ترکیه، عراق، عمان) پیدا نشد.` });
-    } else {
-      resolvedAirports[id] = resolution.airport;
+    if (!field.value) errors.push({ type: "field", field: id, message: `«${label}» را وارد کنید.` });
+  }
+
+  if (Object.keys(airports).length === LEGS.length && !errors.some((e) => e.type === "field")) {
+    const input = buildInput(airports.origin, airports.connection, airports.destination);
+    const timing = resolveFlightTimes(input);
+    if (!timing.ok) {
+      errors.push({ type: "field", field: timing.field ?? "flight1-arrival-time", message: timing.error });
     }
   }
 
-  for (const [id, label] of REQUIRED_FIELDS) {
-    const field = document.getElementById(id);
-    if (!field.value) errors.push({ field: id, message: `«${label}» را وارد کنید.` });
-  }
-
-  const allTimeFieldsPresent = REQUIRED_FIELDS.every(([id]) => Boolean(document.getElementById(id).value));
-  if (Object.keys(resolvedAirports).length === AIRPORT_FIELDS.length && allTimeFieldsPresent) {
-    const timestamps = resolveFlightTimes(buildInput(resolvedAirports));
-    if (!timestamps.ok) {
-      errors.push({ field: timestamps.field ?? "flight1-arrival-time", message: timestamps.error });
-    }
-  }
-
-  return { errors, input: errors.length ? null : buildInput(resolvedAirports) };
+  return {
+    errors,
+    input: errors.length ? null : buildInput(airports.origin, airports.connection, airports.destination),
+  };
 }
+
+function legLabel(leg) {
+  return leg === "origin" ? "مبدأ" : leg === "connection" ? "مقصد اول" : "مقصد دوم";
+}
+
+/* ---------- نمایش خطاها ---------- */
 
 function clearFormErrors() {
   formErrorSummary.hidden = true;
   formErrorList.replaceChildren();
-  form.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
-  form.querySelectorAll(".field-error").forEach((message) => {
-    const fieldId = message.dataset.errorFor;
-    const field = fieldId ? document.getElementById(fieldId) : null;
-    if (field && message.id) {
-      const descriptions = (field.getAttribute("aria-describedby") ?? "")
-        .split(/\s+/)
-        .filter((id) => id && id !== message.id);
-      if (descriptions.length) field.setAttribute("aria-describedby", descriptions.join(" "));
-      else field.removeAttribute("aria-describedby");
-    }
-    message.textContent = "";
-    message.classList.remove("is-visible");
+  form.querySelectorAll("[aria-invalid='true']").forEach((f) => f.removeAttribute("aria-invalid"));
+  form.querySelectorAll(".field-error").forEach((m) => {
+    m.textContent = "";
+    m.classList.remove("is-visible");
   });
+  for (const leg of LEGS) clearLegError(leg);
 }
 
 function showFormErrors(errors) {
   clearFormErrors();
   const fragment = document.createDocumentFragment();
   let firstField = null;
+
   for (const error of errors) {
     const item = document.createElement("li");
     item.textContent = error.message;
     fragment.append(item);
-    if (!error.field) continue;
-    const field = document.getElementById(error.field);
-    if (field) {
-      field.setAttribute("aria-invalid", "true");
-      const message = document.querySelector(`[data-error-for="${error.field}"]`);
-      if (message) {
-        message.id = `${error.field}-error`;
-        message.textContent = error.message;
-        message.classList.add("is-visible");
-        const descriptions = new Set((field.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean));
-        descriptions.add(message.id);
-        field.setAttribute("aria-describedby", [...descriptions].join(" "));
+
+    if (error.type === "leg") {
+      showLegError(error.leg, error.message);
+      const legCard = document.getElementById(`leg-${error.leg}`);
+      if (legCard && !firstField) firstField = legCard;
+    } else if (error.field) {
+      const field = document.getElementById(error.field);
+      if (field) {
+        field.setAttribute("aria-invalid", "true");
+        const message = document.querySelector(`[data-error-for="${error.field}"]`);
+        if (message) {
+          message.textContent = error.message;
+          message.classList.add("is-visible");
+        }
+        if (!firstField) firstField = field;
       }
-      firstField ??= field;
     }
   }
   formErrorList.replaceChildren(fragment);
   formErrorSummary.hidden = errors.length === 0;
-  if (firstField) {
-    firstField.focus({ preventScroll: true });
-    firstField.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
-  }
+  if (firstField) firstField.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
 }
 
-/* ---------- پیش‌نمایش زندهٔ اتصال ---------- */
+/* ---------- پیش‌نمایش زنده ---------- */
 
 function updateConnectionTimeline() {
-  const arrival = resolveAirport(valueOf("flight1-destination"));
-  const departure = resolveAirport(valueOf("flight2-origin"));
-  const arrivalCode = arrival.status === "matched" ? arrival.airport.iata : "-";
-  const departureCode = departure.status === "matched" ? departure.airport.iata : "-";
-  setText("#timeline-flight1-destination", arrivalCode);
-  setText("#timeline-flight2-origin", departureCode);
-  const departureTime = valueOf("flight2-departure-time");
-  setText("#timeline-flight2-departure", departureTime ? toPersianDigits(departureTime) : "--:--");
+  const arrival = getLegAirport("connection");
+  const departure = getLegAirport("connection");
+  const destination = getLegAirport("destination");
+
+  setText("#timeline-flight1-destination", arrival ? arrival.iata : "-");
+  setText("#timeline-flight2-origin", destination ? destination.iata : "-");
+  const depTime = valueOf("flight2-departure-time");
+  setText("#timeline-flight2-departure", depTime ? toPersianDigits(depTime) : "--:--");
 
   let connectionLabel = "--:--";
-  if (arrival.status === "matched" && departure.status === "matched") {
-    const timing = resolveFlightTimes({
-      flight1: {
-        origin: arrival.airport,
-        destination: arrival.airport,
-        departureDate: valueOf("flight1-departure-date"),
-        departureTime: valueOf("flight1-departure-time"),
-        arrivalDate: valueOf("flight1-arrival-date"),
-        arrivalTime: valueOf("flight1-arrival-time"),
-      },
-      flight2: {
-        origin: departure.airport,
-        destination: departure.airport,
-        departureDate: valueOf("flight2-departure-date"),
-        departureTime: valueOf("flight2-departure-time"),
-      },
-      connection: connectionAnswers,
-    });
-    if (timing.ok) connectionLabel = formatDuration(timing.connectionMinutes, { compact: true });
+  if (arrival && destination) {
+    const origin = getLegAirport("origin");
+    if (origin) {
+      const timing = resolveFlightTimes({
+        flight1: {
+          origin,
+          destination: arrival,
+          departureDate: valueOf("flight1-departure-date"),
+          departureTime: valueOf("flight1-departure-time"),
+          arrivalDate: valueOf("flight1-arrival-date"),
+          arrivalTime: valueOf("flight1-arrival-time"),
+        },
+        flight2: {
+          origin: arrival,
+          destination,
+          departureDate: valueOf("flight2-departure-date"),
+          departureTime: valueOf("flight2-departure-time"),
+        },
+        connection: connectionAnswers,
+      });
+      if (timing.ok) connectionLabel = formatDuration(timing.connectionMinutes, { compact: true });
+    }
   }
   setText("#timeline-connection-time", connectionLabel);
 }
@@ -470,10 +627,11 @@ function riskVariant(levelId) {
   return ["low", "medium", "high", "very-high"].includes(levelId) ? levelId : "medium";
 }
 
-function makeRouteText(input, analysis) {
+function makeRouteText(input) {
   const start = `${input.flight1.origin.cityFa} (${input.flight1.origin.iata})`;
   const destination = `${input.flight2.destination.cityFa} (${input.flight2.destination.iata})`;
-  const connection = analysis.connection.sameAirport
+  const sameAirport = input.flight1.destination.iata === input.flight2.origin.iata;
+  const connection = sameAirport
     ? `${input.flight1.destination.cityFa} (${input.flight1.destination.iata})`
     : `${input.flight1.destination.cityFa} (${input.flight1.destination.iata} → ${input.flight2.origin.iata})`;
   return `${start} → ${connection} → ${destination}`;
@@ -481,20 +639,16 @@ function makeRouteText(input, analysis) {
 
 function renderRouteTags(input, analysis) {
   const container = document.querySelector("#route-summary-tags");
-  if (!container) return;
   const fragment = document.createDocumentFragment();
   const tags = [
-    analysis.connection.sameAirport
-      ? "ورود و خروج از یک فرودگاه"
-      : analysis.connection.sameCity
-        ? "دو فرودگاه متفاوت در یک شهر"
-        : "تغییر شهر در محل اتصال",
+    analysis.connection.sameAirport ? "ورود و خروج از یک فرودگاه"
+      : analysis.connection.sameCity ? "دو فرودگاه متفاوت در یک شهر"
+      : "تغییر شهر در محل اتصال",
   ];
   if (analysis.timing.crossesLocalDate) tags.push("عبور از تاریخ محلی");
-  if (analysis.connection.timezoneOffsetDifferenceMinutes > 0) tags.push("تفاوت منطقهٔ زمانی در جابه‌جایی");
+  if (analysis.connection.timezoneOffsetDifferenceMinutes > 0) tags.push("تفاوت منطقهٔ زمانی");
   if (input.connection.ticketType === "separate") tags.push("دو بلیت جداگانه");
   if (input.connection.transferType === "self") tags.push("Self-transfer");
-  if (analysis.timing.ambiguousTimes) tags.push("ساعت تکراری در تغییر ساعت فصلی");
   for (const tag of tags) appendTextElement(fragment, "span", "route-tag", tag);
   container.replaceChildren(fragment);
 }
@@ -516,36 +670,24 @@ function createStatCard({ icon, tone = "primary", label, value, note }) {
 
 function renderStats(input, analysis) {
   const container = document.querySelector("#connection-stats");
-  if (!container) return;
   const buffer = analysis.timing.connectionMinutes - analysis.timing.estimatedMinimumMinutes;
   const offset = analysis.connection.timezoneOffsetDifferenceMinutes;
   const fragment = document.createDocumentFragment();
   fragment.append(
-    createStatCard({
-      icon: "clock",
-      label: "زمان اتصال واقعی",
-      value: formatDuration(analysis.timing.connectionMinutes),
-      note: "با محاسبهٔ منطقهٔ زمانی هر فرودگاه",
-    }),
-    createStatCard({
-      icon: "gauge",
-      tone: "muted",
-      label: "حداقل برآوردی داخلی",
-      value: formatDuration(analysis.timing.estimatedMinimumMinutes),
-      note: "برآورد داخلی، نه MCT رسمی",
-    }),
+    createStatCard({ icon: "clock", label: "زمان اتصال واقعی", value: formatDuration(analysis.timing.connectionMinutes), note: "با محاسبهٔ منطقهٔ زمانی" }),
+    createStatCard({ icon: "gauge", tone: "muted", label: "حداقل برآوردی داخلی", value: formatDuration(analysis.timing.estimatedMinimumMinutes), note: "برآورد داخلی، نه MCT رسمی" }),
     createStatCard({
       icon: buffer >= 0 ? "shield" : "warning",
       tone: buffer >= 0 ? "primary" : "muted",
       label: "حاشیه نسبت به برآورد",
       value: buffer >= 0 ? `+${formatDuration(buffer)}` : `کمبود ${formatDuration(Math.abs(buffer))}`,
-      note: buffer >= 0 ? "بیشتر از برآورد داخلی" : "کمتر از برآورد داخلی",
+      note: buffer >= 0 ? "بیشتر از برآورد" : "کمتر از برآورد",
     }),
     createStatCard({
       icon: offset > 0 ? "globe" : "calendar",
       tone: offset > 0 ? "primary" : "muted",
       label: offset > 0 ? "اختلاف منطقهٔ زمانی" : "تاریخ محلی",
-      value: offset > 0 ? formatDuration(offset) : analysis.timing.crossesLocalDate ? "عبور از نیمه‌شب" : "یک تاریخ محلی",
+      value: offset > 0 ? formatDuration(offset) : analysis.timing.crossesLocalDate ? "عبور از نیمه‌شب" : "یک تاریخ",
       note: offset > 0 ? "اختلاف ساعت دو فرودگاه" : "ورود و حرکت بعدی",
     }),
   );
@@ -561,15 +703,13 @@ function factorTone(factor) {
 
 function renderFactors(analysis) {
   const container = document.querySelector("#factor-list");
-  if (!container) return;
   const fragment = document.createDocumentFragment();
-  const factors = [...analysis.factors].sort((a, b) => b.points - a.points || a.title.localeCompare(b.title, "fa"));
+  const factors = [...analysis.factors].sort((a, b) => b.points - a.points);
   for (const factor of factors) {
     const tone = factorTone(factor);
     const item = document.createElement("div");
     item.className = "factor-item";
-    const indicator = appendTextElement(item, "span", `factor-indicator factor-indicator-${tone}`, tone === "danger" ? "!" : tone === "warning" ? "!" : tone === "success" ? "✓" : "·");
-    indicator.setAttribute("aria-hidden", "true");
+    const indicator = appendTextElement(item, "span", `factor-indicator factor-indicator-${tone}`, tone === "danger" || tone === "warning" ? "!" : tone === "success" ? "✓" : "·");
     const content = document.createElement("div");
     content.className = "factor-content";
     appendTextElement(content, "span", "factor-title", factor.title);
@@ -582,48 +722,38 @@ function renderFactors(analysis) {
 }
 
 function delayStatus(evaluation) {
-  if (evaluation.timing.remainingMinutes <= 0) return "زمان باقی‌مانده صفر یا منفی است؛ پرواز دوم ممکن است پیش از رسیدن مسافر حرکت کند.";
+  if (evaluation.timing.remainingMinutes <= 0) return "پرواز دوم ممکن است پیش از رسیدن مسافر حرکت کند.";
   if (evaluation.level.id === "low") return "برآورد ریسک پایین؛ تأیید رسمی همچنان لازم است.";
-  if (evaluation.level.id === "medium") return "اتصال فشرده‌تر می‌شود؛ شرایط رزرو و MCT را بررسی کنید.";
-  if (evaluation.level.id === "high") return "اتصال پرریسک است؛ تأیید ایرلاین/فرودگاه ضروری است.";
+  if (evaluation.level.id === "medium") return "اتصال فشرده‌تر می‌شود؛ شرایط رزرو را بررسی کنید.";
+  if (evaluation.level.id === "high") return "اتصال پرریسک است؛ تأیید ایرلاین ضروری است.";
   return "ریسک بسیار بالا؛ احتمال از دست رفتن پرواز بعدی قابل توجه است.";
 }
 
 function renderDelays(input) {
   const container = document.querySelector("#delay-grid");
-  if (!container) return;
   const fragment = document.createDocumentFragment();
   for (const scenario of simulateDelays(input)) {
     const { result } = scenario;
     const variant = riskVariant(result.level.id);
     const card = document.createElement("article");
     card.className = "delay-card";
-
     const header = document.createElement("div");
     header.className = "delay-card-header";
     appendTextElement(header, "span", "delay-value", `+${toPersianDigits(scenario.delayMinutes)}`);
     appendTextElement(header, "span", "delay-unit", "دقیقه");
-    const badge = appendTextElement(header, "span", `delay-risk-badge delay-risk-${variant}`, result.level.shortTitle);
-    badge.setAttribute("aria-label", `سطح ریسک: ${result.level.title}`);
+    appendTextElement(header, "span", `delay-risk-badge delay-risk-${variant}`, result.level.shortTitle);
     card.append(header);
-
     const details = document.createElement("div");
     details.className = "delay-details";
     const remainingRow = document.createElement("div");
     remainingRow.className = "delay-detail";
-    appendTextElement(remainingRow, "span", "delay-detail-label", "زمان باقی‌مانده");
-    appendTextElement(
-      remainingRow,
-      "span",
-      "delay-detail-value",
-      result.timing.remainingMinutes <= 0
-        ? `${formatDuration(0)}${result.timing.remainingMinutes < 0 ? " (گذشته)" : ""}`
-        : formatDuration(result.timing.remainingMinutes),
-    );
+    appendTextElement(remainingRow, "span", "delay-detail-label", "باقی‌مانده");
+    appendTextElement(remainingRow, "span", "delay-detail-value",
+      result.timing.remainingMinutes <= 0 ? formatDuration(0) : formatDuration(result.timing.remainingMinutes));
     const scoreRow = document.createElement("div");
     scoreRow.className = "delay-detail";
-    appendTextElement(scoreRow, "span", "delay-detail-label", "امتیاز سناریو");
-    appendTextElement(scoreRow, "span", "delay-detail-value", `${toPersianDigits(result.score)} از ۱۰۰`);
+    appendTextElement(scoreRow, "span", "delay-detail-label", "امتیاز");
+    appendTextElement(scoreRow, "span", "delay-detail-value", `${toPersianDigits(result.score)}/۱۰۰`);
     details.append(remainingRow, scoreRow);
     card.append(details);
     appendTextElement(card, "p", "delay-status", delayStatus(result));
@@ -647,31 +777,21 @@ function renderAnalysis(input, analysis, createdAt = new Date().toISOString()) {
   activeInput = input;
   activeAnalysis = analysis;
   activeCreatedAt = createdAt;
-
   const level = analysis.level;
   const variant = riskVariant(level.id);
 
   resultSection.hidden = false;
-  emptyResult.hidden = true;
-  emptyResult.setAttribute("aria-hidden", "true");
-
   setText("#result-date", `تحلیل در ${formatPersianDate(createdAt, { includeTime: true })}`);
   document.querySelector("#risk-card").className = `risk-card risk-card-${variant}`;
   document.querySelector("#risk-badge").className = `risk-badge risk-badge-${variant}`;
   setText("#risk-level-text", level.title);
-  document.querySelector("#risk-icon").className = `risk-icon risk-icon-${variant}`;
   setText("#risk-score", toPersianDigits(analysis.score));
   const meter = document.querySelector("#risk-meter-fill");
   meter.className = `risk-meter-fill risk-meter-${variant}`;
   meter.style.width = `${analysis.score}%`;
-  meter.setAttribute("role", "progressbar");
   meter.setAttribute("aria-valuenow", String(analysis.score));
-  meter.setAttribute("aria-valuemin", "0");
-  meter.setAttribute("aria-valuemax", "100");
-  meter.setAttribute("aria-label", `امتیاز ریسک: ${analysis.score} از ۱۰۰`);
   setText("#risk-level-description", level.explanation);
-
-  setText("#route-summary-path", makeRouteText(input, analysis));
+  setText("#route-summary-path", makeRouteText(input));
   renderRouteTags(input, analysis);
   renderStats(input, analysis);
   setText("#analysis-summary-text", toPersianDigits(analysis.narrative));
@@ -691,52 +811,34 @@ function safeReadHistory() {
   try {
     const value = JSON.parse(window.localStorage.getItem(HISTORY_KEY) ?? "[]");
     if (!Array.isArray(value)) return [];
-    return value.filter((item) => item && typeof item.id === "string" && item.input && item.analysis).slice(0, MAX_HISTORY_ITEMS);
-  } catch {
-    return [];
-  }
+    return value.filter((i) => i && typeof i.id === "string" && i.input && i.analysis).slice(0, MAX_HISTORY_ITEMS);
+  } catch { return []; }
 }
 
 function safeWriteHistory(items) {
   try {
     window.localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, MAX_HISTORY_ITEMS)));
     return true;
-  } catch {
-    showToast("ذخیرهٔ محلی در این مرورگر در دسترس نیست؛ نتیجه فعلاً فقط روی صفحه دیده می‌شود.");
-    return false;
-  }
+  } catch { showToast("ذخیرهٔ محلی در دسترس نیست."); return false; }
 }
 
 function saveAnalysis(input, analysis, createdAt) {
   const history = safeReadHistory();
   const record = {
     id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    createdAt,
-    input,
-    analysis,
+    createdAt, input, analysis,
   };
-  safeWriteHistory([record, ...history.filter((item) => item.id !== record.id)]);
+  safeWriteHistory([record, ...history.filter((i) => i.id !== record.id)]);
   renderHistory();
 }
 
 function historyRouteText(input) {
   if (!input?.flight1?.origin || !input?.flight2?.destination) return "مسیر ذخیره‌شده";
   const start = input.flight1.origin.iata ?? "؟";
-  const connection =
-    input.flight2.origin?.iata && input.flight2.origin.iata !== input.flight1.destination?.iata
-      ? `${input.flight1.destination?.iata ?? "؟"} / ${input.flight2.origin.iata}`
-      : `${input.flight1.destination?.iata ?? "؟"}`;
+  const connection = input.flight2.origin?.iata && input.flight2.origin.iata !== input.flight1.destination?.iata
+    ? `${input.flight1.destination?.iata ?? "؟"} / ${input.flight2.origin.iata}`
+    : `${input.flight1.destination?.iata ?? "؟"}`;
   return `${start} → ${connection} → ${input.flight2.destination.iata ?? "؟"}`;
-}
-
-function createHistoryActionButton({ icon, label, className }) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = className;
-  button.append(createIcon(icon));
-  button.setAttribute("aria-label", label);
-  button.setAttribute("title", label);
-  return button;
 }
 
 function renderHistory() {
@@ -745,107 +847,63 @@ function renderHistory() {
   clearHistoryButton.hidden = items.length === 0;
   historyEmpty.hidden = items.length > 0;
   const fragment = document.createDocumentFragment();
-
   for (const item of items) {
     const card = document.createElement("article");
     card.className = "history-card";
-
     const route = document.createElement("div");
     route.className = "history-route";
     const routeText = historyRouteText(item.input);
     appendTextElement(route, "span", "history-route-path", routeText);
     appendTextElement(route, "span", "history-route-date", formatPersianDate(item.createdAt, { includeTime: true }));
     card.append(route);
-
-    const levelId = item.analysis?.level?.id ?? "medium";
     const summary = document.createElement("div");
     summary.className = "history-risk";
-    appendTextElement(
-      summary,
-      "span",
-      `history-risk-badge history-risk-badge-${riskVariant(levelId)}`,
-      item.analysis?.level?.shortTitle ?? "؟",
-    );
+    const levelId = item.analysis?.level?.id ?? "medium";
+    appendTextElement(summary, "span", `history-risk-badge history-risk-badge-${riskVariant(levelId)}`, item.analysis?.level?.shortTitle ?? "؟");
     appendTextElement(summary, "span", "history-score", `${toPersianDigits(item.analysis?.score ?? 0)}/۱۰۰`);
     card.append(summary);
-
     const actions = document.createElement("div");
     actions.className = "history-actions";
-    const openButton = createHistoryActionButton({
-      icon: "eye",
-      label: `مشاهدهٔ تحلیل ${routeText}`,
-      className: "history-action-button",
-    });
-    openButton.dataset.historyOpen = item.id;
-    const deleteButton = createHistoryActionButton({
-      icon: "trash",
-      label: `حذف تحلیل ${routeText}`,
-      className: "history-action-button delete",
-    });
-    deleteButton.dataset.historyDelete = item.id;
-    actions.append(openButton, deleteButton);
+    const openBtn = document.createElement("button");
+    openBtn.type = "button";
+    openBtn.className = "history-action-button";
+    openBtn.append(createIcon("eye"));
+    openBtn.dataset.historyOpen = item.id;
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "history-action-button delete";
+    delBtn.append(createIcon("trash"));
+    delBtn.dataset.historyDelete = item.id;
+    actions.append(openBtn, delBtn);
     card.append(actions);
-
     fragment.append(card);
   }
   historyList.replaceChildren(fragment);
 }
 
-function restoreInput(input) {
-  const fields = {
-    "flight1-origin": input.flight1.origin.iata,
-    "flight1-destination": input.flight1.destination.iata,
-    "flight1-departure-date": input.flight1.departureDate,
-    "flight1-departure-time": input.flight1.departureTime,
-    "flight1-arrival-date": input.flight1.arrivalDate,
-    "flight1-arrival-time": input.flight1.arrivalTime,
-    "flight1-airline": input.flight1.airline ?? "",
-    "flight1-number": input.flight1.flightNumber ?? "",
-    "flight2-origin": input.flight2.origin.iata,
-    "flight2-destination": input.flight2.destination.iata,
-    "flight2-departure-date": input.flight2.departureDate,
-    "flight2-departure-time": input.flight2.departureTime,
-    "flight2-airline": input.flight2.airline ?? "",
-    "flight2-number": input.flight2.flightNumber ?? "",
-  };
-  for (const [id, value] of Object.entries(fields)) {
-    const field = document.getElementById(id);
-    if (field) field.value = value;
-  }
-  connectionAnswers = sanitizeConnectionAnswers(input.connection);
-  syncConditionChips();
-  secondOriginMirrored = false;
-  updateConnectionTimeline();
-}
-
 /* ---------- کپی و چاپ ---------- */
 
 function makeCopyText() {
-  const analysis = activeAnalysis;
-  const input = activeInput;
-  if (!analysis || !input) return "";
-  const reasons = analysis.factors
-    .filter((factor) => factor.points > 0)
-    .slice(0, 5)
-    .map((factor) => `• ${factor.title}`);
-  const delays = simulateDelays(input).map((scenario) => {
-    const remaining = scenario.result.timing.remainingMinutes;
-    const remainingLabel = remaining <= 0 ? "۰ دقیقه" : formatDuration(remaining);
-    return `+${toPersianDigits(scenario.delayMinutes)} دقیقه: ${remainingLabel} باقی می‌ماند؛ ${scenario.result.level.title} (${toPersianDigits(scenario.result.score)}/۱۰۰)`;
+  if (!activeAnalysis || !activeInput) return "";
+  const reasons = activeAnalysis.factors.filter((f) => f.points > 0).slice(0, 5).map((f) => `• ${f.title}`);
+  const delays = simulateDelays(activeInput).map((s) => {
+    const remaining = s.result.timing.remainingMinutes;
+    const label = remaining <= 0 ? "۰ دقیقه" : formatDuration(remaining);
+    return `+${toPersianDigits(s.delayMinutes)} دقیقه: ${label} باقی می‌ماند؛ ${s.result.level.title} (${toPersianDigits(s.result.score)}/۱۰۰)`;
   });
   return [
     "بررسی ریسک کانکشن پرواز",
     `تاریخ تحلیل: ${formatPersianDate(activeCreatedAt, { includeTime: true })}`,
-    `مسیر: ${makeRouteText(input, analysis)}`,
-    `زمان اتصال: ${formatDuration(analysis.timing.connectionMinutes)}`,
-    `حداقل زمان برآوردی داخلی: ${formatDuration(analysis.timing.estimatedMinimumMinutes)}`,
-    `امتیاز ریسک: ${toPersianDigits(analysis.score)} از ۱۰۰`,
-    `سطح: ${analysis.level.title}`,
+    `مسیر: ${makeRouteText(activeInput)}`,
+    `زمان اتصال: ${formatDuration(activeAnalysis.timing.connectionMinutes)}`,
+    `حداقل زمان برآوردی: ${formatDuration(activeAnalysis.timing.estimatedMinimumMinutes)}`,
+    `امتیاز ریسک: ${toPersianDigits(activeAnalysis.score)} از ۱۰۰`,
+    `سطح: ${activeAnalysis.level.title}`,
     "دلایل مهم:",
-    ...(reasons.length ? reasons : ["• عامل افزایندهٔ مهمی ثبت نشد؛ MCT همچنان برآورد داخلی است."]),
-    "سناریوی تأخیر پرواز اول:",
-    ...delays.map((line) => `• ${line}`),
-    `توصیه: ${analysis.recommendation}`,
+    ...(reasons.length ? reasons : ["• عامل افزایندهٔ مهمی ثبت نشد."]),
+    "سناریوی تأخیر:",
+    ...delays.map((l) => `• ${l}`),
+    `توصیه: ${activeAnalysis.recommendation}`,
     "---- اطلاعیه رسمی مشتری ----",
     activeNotice,
   ].join("\n");
@@ -859,22 +917,19 @@ async function copyResult() {
     setCopyFeedback("نتیجه کپی شد.");
     showToast("متن نتیجه کپی شد.");
   } catch {
-    setCopyFeedback("کپی خودکار در این مرورگر در دسترس نیست.");
-    showToast("کپی خودکار در دسترس نیست؛ دسترسی مرورگر را بررسی کنید.");
+    setCopyFeedback("کپی خودکار در دسترس نیست.");
+    showToast("کپی خودکار در دسترس نیست.");
   }
 }
 
 async function copyNotice() {
-  if (!activeNotice) {
-    showToast("ابتدا یک تحلیل انجام دهید.");
-    return;
-  }
+  if (!activeNotice) { showToast("ابتدا یک تحلیل انجام دهید."); return; }
   try {
     await copyTextToClipboard(activeNotice);
     setNoticeFeedback("اطلاعیه کپی شد.");
     showToast("اطلاعیه رسمی کپی شد.");
   } catch {
-    setNoticeFeedback("کپی خودکار در این مرورگر در دسترس نیست.");
+    setNoticeFeedback("کپی خودکار در دسترس نیست.");
     showToast("کپی خودکار در دسترس نیست.");
   }
 }
@@ -893,7 +948,7 @@ form.addEventListener("submit", (event) => {
   clearFormErrors();
   const { errors, input } = collectFormInput();
   if (errors.length || !input) {
-    showFormErrors(errors.length ? errors : [{ message: "اطلاعات کافی برای محاسبهٔ ریسک وجود ندارد." }]);
+    showFormErrors(errors.length ? errors : [{ message: "اطلاعات کافی وجود ندارد." }]);
     return;
   }
   setAnalyzing(true);
@@ -915,23 +970,16 @@ form.addEventListener("submit", (event) => {
         iatas: routeIatas,
       });
       renderRecentRoutes();
-      resultPanel.scrollIntoView({
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-        block: "start",
-      });
+      resultPanel.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
     } catch (error) {
-      showFormErrors([{ message: error instanceof Error ? error.message : "اطلاعات کافی برای محاسبهٔ ریسک وجود ندارد." }]);
+      showFormErrors([{ message: error instanceof Error ? error.message : "خطا در تحلیل." }]);
     } finally {
       setAnalyzing(false);
     }
   }, prefersReducedMotion() ? 0 : 220);
 });
 
-function clearErrorsWhenEdited() {
-  if (!formErrorSummary.hidden) clearFormErrors();
-}
-form.addEventListener("input", clearErrorsWhenEdited);
-form.addEventListener("change", clearErrorsWhenEdited);
+form.addEventListener("input", () => { if (!formErrorSummary.hidden) clearFormErrors(); });
 form.addEventListener("input", updateConnectionTimeline);
 
 conditionsContainer.addEventListener("click", (event) => {
@@ -942,45 +990,11 @@ conditionsContainer.addEventListener("click", (event) => {
   if (!(key in connectionAnswers)) return;
   connectionAnswers = { ...connectionAnswers, [key]: value };
   syncConditionChips();
-});
-
-document.querySelector("#flight1-destination").addEventListener("change", () => {
-  const arrival = resolveAirport(valueOf("flight1-destination"));
-  if (arrival.status !== "matched") return;
-  const secondOrigin = document.getElementById("flight2-origin");
-  if (!secondOrigin) return;
-  const shouldMirror = !secondOrigin.value || secondOriginMirrored;
-  if (!shouldMirror) return;
-  secondOrigin.value = airportLabel(arrival.airport);
-  secondOriginMirrored = true;
   updateConnectionTimeline();
 });
 
-document.querySelector("#flight2-origin").addEventListener("input", () => {
-  secondOriginMirrored = false;
-});
-
-function handleQuickRouteClick(event) {
-  const target = event.target instanceof Element ? event.target : null;
-  const card = target?.closest(".quick-route-card");
-  if (!card) return;
-  const allRoutes = [...COMMON_ROUTES.map((r) => ({ id: r.id, iatas: r.airports })), ...readRecentRoutes()];
-  const preset = allRoutes.find((route) => route.id === card.dataset.routeId);
-  if (!preset) return;
-  const selectors = ["#flight1-origin", "#flight1-destination", "#flight2-origin", "#flight2-destination"];
-  preset.iatas.forEach((code, index) => {
-    const field = document.querySelector(selectors[index]);
-    const airport = getAirportByIata(code);
-    if (field && airport) field.value = airportLabel(airport);
-  });
-  secondOriginMirrored = true;
-  clearFormErrors();
-  updateConnectionTimeline();
-  showToast("فرودگاه‌های مسیر وارد شد؛ زمان و شرایط اتصال را تکمیل کنید.");
-}
-
-quickRoutesCarousel.addEventListener("click", handleQuickRouteClick);
-if (recentRoutesCarousel) recentRoutesCarousel.addEventListener("click", handleQuickRouteClick);
+frequentRoutesChips.addEventListener("click", handleRouteChipClick);
+recentRoutesChips.addEventListener("click", handleRouteChipClick);
 
 historyList.addEventListener("click", (event) => {
   const target = event.target instanceof Element ? event.target : null;
@@ -988,30 +1002,39 @@ historyList.addEventListener("click", (event) => {
   const openButton = target.closest("[data-history-open]");
   const deleteButton = target.closest("[data-history-delete]");
   const items = safeReadHistory();
-
   if (openButton) {
     const record = items.find((item) => item.id === openButton.dataset.historyOpen);
     if (!record) return;
     try {
       const latest = evaluateConnection(record.input);
       const analysis = record.analysis?.modelVersion === latest.modelVersion ? record.analysis : latest;
-      restoreInput(record.input);
+      applyRouteToBuilder([
+        record.input.flight1.origin.iata,
+        record.input.flight1.destination.iata,
+        record.input.flight2.origin.iata,
+        record.input.flight2.destination.iata,
+      ]);
+      document.getElementById("flight1-departure-date").value = record.input.flight1.departureDate;
+      document.getElementById("flight1-departure-time").value = record.input.flight1.departureTime;
+      document.getElementById("flight1-arrival-date").value = record.input.flight1.arrivalDate;
+      document.getElementById("flight1-arrival-time").value = record.input.flight1.arrivalTime;
+      document.getElementById("flight2-departure-date").value = record.input.flight2.departureDate;
+      document.getElementById("flight2-departure-time").value = record.input.flight2.departureTime;
+      connectionAnswers = sanitizeConnectionAnswers(record.input.connection);
+      syncConditionChips();
       renderAnalysis(record.input, analysis, record.createdAt);
       resultPanel.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
-    } catch {
-      showToast("این تحلیل دیگر قابل بازخوانی نیست؛ اطلاعات آن را دوباره وارد کنید.");
-    }
+    } catch { showToast("این تحلیل دیگر قابل بازخوانی نیست."); }
   }
-
   if (deleteButton) {
     safeWriteHistory(items.filter((item) => item.id !== deleteButton.dataset.historyDelete));
     renderHistory();
-    showToast("تحلیل از تاریخچهٔ همین دستگاه حذف شد.");
+    showToast("تحلیل حذف شد.");
   }
 });
 
 clearHistoryButton.addEventListener("click", () => {
-  if (!window.confirm("همهٔ تحلیل‌های ذخیره‌شده روی این دستگاه حذف شوند؟")) return;
+  if (!window.confirm("همهٔ تحلیل‌ها حذف شوند؟")) return;
   safeWriteHistory([]);
   renderHistory();
   showToast("تاریخچه پاک شد.");
@@ -1019,10 +1042,7 @@ clearHistoryButton.addEventListener("click", () => {
 
 document.querySelector("#copy-result-button").addEventListener("click", copyResult);
 document.querySelector("#print-result-button").addEventListener("click", () => {
-  if (!activeAnalysis) {
-    showToast("ابتدا یک تحلیل انجام دهید تا نتیجه قابل چاپ باشد.");
-    return;
-  }
+  if (!activeAnalysis) { showToast("ابتدا یک تحلیل انجام دهید."); return; }
   window.print();
 });
 if (copyNoticeButton) copyNoticeButton.addEventListener("click", copyNotice);
@@ -1031,37 +1051,13 @@ window.addEventListener("scroll", () => {
   siteHeader.classList.toggle("scrolled", window.scrollY > 8);
 }, { passive: true });
 
-let deferredInstallPrompt = null;
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  deferredInstallPrompt = event;
-  document.querySelector("#install-button").hidden = false;
-});
-document.querySelector("#install-button").addEventListener("click", async () => {
-  if (!deferredInstallPrompt) return;
-  await deferredInstallPrompt.prompt();
-  deferredInstallPrompt = null;
-  document.querySelector("#install-button").hidden = true;
-});
-
-if (
-  "serviceWorker" in navigator &&
-  (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")
-) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-      showToast("حالت آفلاین در این مرورگر فعال نشد؛ محاسبهٔ آنلاین همچنان در دسترس است.");
-    });
-  });
-}
-
 /* ---------- راه‌اندازی ---------- */
 
 initializeTheme();
-emptyResult.setAttribute("aria-hidden", "false");
-initializeAirportOptions();
-initializeQuickRoutes();
+initializeRouteBuilder();
 initializeConditions();
 setDefaultDates();
+renderFrequentRoutes();
+renderRecentRoutes();
 renderHistory();
 updateConnectionTimeline();
