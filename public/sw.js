@@ -1,10 +1,12 @@
-const CACHE_NAME = "flight-connection-risk-checker-v1.0.1";
+const CACHE_NAME = "flight-connection-risk-checker-v1.0.2";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/src/main.js",
   "/src/styles.css",
   "/src/lib/airports.js",
+  "/src/lib/clipboard.js",
+  "/src/lib/connection-questions.js",
   "/src/lib/time.js",
   "/src/lib/risk-engine/engine.js",
   "/src/lib/risk-engine/risk-rules.js",

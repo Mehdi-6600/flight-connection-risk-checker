@@ -189,8 +189,8 @@
                             aria-required="true"
                             aria-describedby="flight1-origin-hint"
                           />
-                          <p class="field-hint" id="flight1-origin-hint">مثال: IKIA، THR، یا فرودگاه امام خمینی</p>
-                          <p class="field-error" id="flight1-origin-error"></p>
+                          <p class="field-hint" id="flight1-origin-hint">مثال: IKA، THR، یا فرودگاه امام خمینی</p>
+                          <p class="field-error" id="flight1-origin-error" data-error-for="flight1-origin"></p>
                         </div>
                         
                         <div class="field-group">
@@ -211,7 +211,7 @@
                             aria-describedby="flight1-destination-hint"
                           />
                           <p class="field-hint" id="flight1-destination-hint">فرودگاه ورود به کشور مقصد</p>
-                          <p class="field-error" id="flight1-destination-error"></p>
+                          <p class="field-error" id="flight1-destination-error" data-error-for="flight1-destination"></p>
                         </div>
                       </div>
                       
@@ -226,7 +226,7 @@
                             required
                             aria-required="true"
                           />
-                          <p class="field-error" id="flight1-departure-date-error"></p>
+                          <p class="field-error" id="flight1-departure-date-error" data-error-for="flight1-departure-date"></p>
                         </div>
                         
                         <div class="field-group">
@@ -239,7 +239,7 @@
                             required
                             aria-required="true"
                           />
-                          <p class="field-error" id="flight1-arrival-date-error"></p>
+                          <p class="field-error" id="flight1-arrival-date-error" data-error-for="flight1-arrival-date"></p>
                         </div>
                       </div>
                       
@@ -254,7 +254,7 @@
                             required
                             aria-required="true"
                           />
-                          <p class="field-error" id="flight1-departure-time-error"></p>
+                          <p class="field-error" id="flight1-departure-time-error" data-error-for="flight1-departure-time"></p>
                         </div>
                         
                         <div class="field-group">
@@ -267,7 +267,7 @@
                             required
                             aria-required="true"
                           />
-                          <p class="field-error" id="flight1-arrival-time-error"></p>
+                          <p class="field-error" id="flight1-arrival-time-error" data-error-for="flight1-arrival-time"></p>
                         </div>
                       </div>
                       
@@ -334,8 +334,8 @@
                             aria-required="true"
                             aria-describedby="flight2-origin-hint"
                           />
-                          <p class="field-hint" id="flight2-origin-hint">مثال: IKIA، THR</p>
-                          <p class="field-error" id="flight2-origin-error"></p>
+                          <p class="field-hint" id="flight2-origin-hint">مثال: IKA، THR</p>
+                          <p class="field-error" id="flight2-origin-error" data-error-for="flight2-origin"></p>
                         </div>
                         
                         <div class="field-group">
@@ -356,7 +356,7 @@
                             aria-describedby="flight2-destination-hint"
                           />
                           <p class="field-hint" id="flight2-destination-hint">فرودگاه مقصد نهایی</p>
-                          <p class="field-error" id="flight2-destination-error"></p>
+                          <p class="field-error" id="flight2-destination-error" data-error-for="flight2-destination"></p>
                         </div>
                       </div>
                       
@@ -371,18 +371,7 @@
                             required
                             aria-required="true"
                           />
-                          <p class="field-error" id="flight2-departure-date-error"></p>
-                        </div>
-                        
-                        <div class="field-group">
-                          <label for="flight2-arrival-date">تاریخ ورود</label>
-                          <input 
-                            type="date" 
-                            id="flight2-arrival-date" 
-                            name="flight2-arrival-date" 
-                            class="field-input ltr"
-                          />
-                          <p class="field-error" id="flight2-arrival-date-error"></p>
+                          <p class="field-error" id="flight2-departure-date-error" data-error-for="flight2-departure-date"></p>
                         </div>
                       </div>
                       
@@ -396,19 +385,10 @@
                             class="field-input ltr"
                             required
                             aria-required="true"
+                            aria-describedby="flight2-departure-time-hint"
                           />
-                          <p class="field-error" id="flight2-departure-time-error"></p>
-                        </div>
-                        
-                        <div class="field-group">
-                          <label for="flight2-arrival-time">ساعت ورود (محلی)</label>
-                          <input 
-                            type="time" 
-                            id="flight2-arrival-time" 
-                            name="flight2-arrival-time" 
-                            class="field-input ltr"
-                          />
-                          <p class="field-error" id="flight2-arrival-time-error"></p>
+                          <p class="field-hint" id="flight2-departure-time-hint">فقط زمان حرکت پرواز دوم در محاسبهٔ اتصال استفاده می‌شود.</p>
+                          <p class="field-error" id="flight2-departure-time-error" data-error-for="flight2-departure-time"></p>
                         </div>
                       </div>
                       
@@ -696,7 +676,7 @@
         </section>
 
         <!-- Empty Result State -->
-        <div class="empty-result no-print" id="empty-result" aria-hidden="true">
+        <div class="empty-result no-print" id="empty-result">
           <div class="empty-state-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -712,7 +692,10 @@
         <!-- History Section -->
         <section class="history-section" id="history-section" aria-labelledby="history-title">
           <div class="history-header">
-            <h2 id="history-title">تاریخچه تحلیل‌ها</h2>
+            <div class="history-title-group">
+              <h2 id="history-title">تاریخچه تحلیل‌ها</h2>
+              <span class="history-count" id="history-count" aria-live="polite"></span>
+            </div>
             <button class="clear-history-button" id="clear-history-button" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6" />
@@ -762,16 +745,6 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast" hidden aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Preset Control (Hidden by default, shown via JS) -->
-    <div class="preset-control no-print" id="preset-control" hidden>
-      <label for="route-preset">مسیر پرتکرار</label>
-      <div class="select-wrap">
-        <select id="route-preset" aria-describedby="preset-help">
-          <option value="">انتخاب مسیر برای پرکردن سریع</option>
-        </select>
-        <span class="select-chevron" aria-hidden="true">⌄</span>
-      </div>
-      <p id="preset-help">این مسیرها فقط برای ورود سریع‌اند؛ تأیید یا ایمنی مسیر را نشان نمی‌دهند.</p>
-    </div>
-  </body>
+
+</body>
 </html>

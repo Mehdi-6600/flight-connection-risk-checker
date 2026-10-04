@@ -2,9 +2,10 @@ name: بررسی کیفیت پروژه
 
 on:
   push:
-    branches: [main, arena/01a10627-flight-connection-risk-checker]
+    branches: ["**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

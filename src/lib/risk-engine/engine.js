@@ -17,10 +17,10 @@ function addFactor(factors, key, title, points, description, tone = "neutral") {
   factors.push({ key, title, points, description, tone });
 }
 
-function makeLocalTimestamp(date, time, airport, label) {
+function makeLocalTimestamp(date, time, airport, label, field) {
   const result = airportLocalToUtc(date, time, airport.timezone);
   if (!result.ok) {
-    return { error: `${label}: ${result.reason}` };
+    return { error: `${label}: ${result.reason}`, field };
   }
   return { timestamp: result.timestamp, ambiguous: result.ambiguous };
 }
@@ -31,30 +31,41 @@ export function resolveFlightTimes(input) {
     input.flight1.departureTime,
     input.flight1.origin,
     "زمان خروج پرواز اول",
+    "flight1-departure-time",
   );
-  if (departures.error) return { ok: false, error: departures.error };
+  if (departures.error) return { ok: false, error: departures.error, field: departures.field };
 
   const arrivals = makeLocalTimestamp(
     input.flight1.arrivalDate,
     input.flight1.arrivalTime,
     input.flight1.destination,
     "زمان ورود پرواز اول",
+    "flight1-arrival-time",
   );
-  if (arrivals.error) return { ok: false, error: arrivals.error };
+  if (arrivals.error) return { ok: false, error: arrivals.error, field: arrivals.field };
 
   const secondDeparture = makeLocalTimestamp(
     input.flight2.departureDate,
     input.flight2.departureTime,
     input.flight2.origin,
     "زمان خروج پرواز دوم",
+    "flight2-departure-time",
   );
-  if (secondDeparture.error) return { ok: false, error: secondDeparture.error };
+  if (secondDeparture.error) return { ok: false, error: secondDeparture.error, field: secondDeparture.field };
 
   if (arrivals.timestamp <= departures.timestamp) {
-    return { ok: false, error: "زمان ورود پرواز اول باید بعد از زمان خروج همان پرواز باشد." };
+    return {
+      ok: false,
+      error: "زمان ورود پرواز اول باید بعد از زمان خروج همان پرواز باشد.",
+      field: "flight1-arrival-time",
+    };
   }
   if (secondDeparture.timestamp < arrivals.timestamp) {
-    return { ok: false, error: "زمان پرواز دوم باید بعد از زمان ورود پرواز اول باشد." };
+    return {
+      ok: false,
+      error: "زمان پرواز دوم باید بعد از زمان ورود پرواز اول باشد.",
+      field: "flight2-departure-time",
+    };
   }
 
   return {
