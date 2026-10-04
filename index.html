@@ -3,39 +3,31 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0F766E" />
+    <meta name="theme-color" content="#07111F" />
     <meta name="color-scheme" content="light dark" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
-    <meta name="description" content="ابزار حرفه‌ای داخلی برای ارزیابی ریسک اتصال پروازها با رابط کاربری مدرن و تجربه کاربری بهینه" />
+    <meta name="description" content="ابزار حرفه‌ای داخلی برای ارزیابی ریسک اتصال پروازها در ایران، ترکیه، عراق و عمان" />
     <title>بررسی ریسک کانکشن پرواز</title>
-    
-    <!-- Favicon & PWA -->
+
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    
-    <!-- PWA Settings -->
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    
-    <!-- Fonts -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Styles -->
+
     <link rel="stylesheet" href="/src/styles.css" />
-    
-    <!-- Scripts -->
     <script type="module" src="/src/main.js"></script>
   </head>
-  
+
   <body>
-    <!-- Skip Link for Accessibility -->
     <a class="skip-link" href="#main-content">رفتن به محتوای اصلی</a>
 
-    <!-- Header -->
     <header class="site-header" id="site-header">
       <div class="header-inner">
         <a class="brand" href="#top" aria-label="صفحهٔ اصلی بررسی ریسک کانکشن">
@@ -52,7 +44,7 @@
             <span>ابزار تصمیم‌گیری حرفه‌ای</span>
           </span>
         </a>
-        
+
         <div class="header-actions">
           <button class="theme-toggle" id="theme-toggle" type="button" aria-label="تغییر حالت روشن/تاریک">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -60,12 +52,12 @@
               <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
             </svg>
           </button>
-          
+
           <span class="status-badge">
             <span class="status-dot" aria-hidden="true"></span>
             محاسبه در همین دستگاه
           </span>
-          
+
           <button class="install-button" id="install-button" type="button" hidden aria-label="نصب برنامه">
             <svg viewBox="0 0 20 20" aria-hidden="true">
               <path d="M10 2v10m0 0 3.5-3.5M10 12 6.5 8.5M3 13.5v3h14v-3" />
@@ -76,73 +68,40 @@
       </div>
     </header>
 
-    <!-- Main Content -->
     <main id="main-content">
       <div class="container">
-        
-        <!-- Hero Section -->
-        <section class="hero no-print" id="top" aria-labelledby="page-title">
-          <div class="hero-inner">
-            <div class="hero-content">
-              <span class="hero-badge">ابزار تصمیم‌گیری داخلی</span>
-              <h1 id="page-title">بررسی ریسک کانکشن پرواز</h1>
-              <p class="hero-description">
-                قبل از صدور یا پیشنهاد بلیت، مطمئن شوید زمان و شرایط ترانزیت منطقی و ایمن است.
-              </p>
-              <p class="hero-note">
-                <span aria-hidden="true">ⓘ</span> 
-                این برآورد جایگزین تأیید رسمی ایرلاین، فرودگاه یا مراجع مهاجرتی نیست.
-              </p>
-            </div>
-            
-            <div class="hero-visual" aria-hidden="true">
-              <div class="timeline-container">
-                <div class="timeline-segment">
-                  <div class="timeline-airport">
-                    <div class="timeline-airport-code">مبدا</div>
-                  </div>
-                  <div class="timeline-connector"></div>
-                  <div class="timeline-plane">
-                    <svg viewBox="0 0 24 24">
-                      <path d="m21 3-7.2 18-3.4-7.4L3 10.2 21 3Z" />
-                      <path d="m10.4 13.6 4.4-4.4" />
-                    </svg>
-                  </div>
-                </div>
-                <div class="timeline-segment">
-                  <div class="timeline-connector"></div>
-                  <div class="timeline-airport">
-                    <div class="timeline-airport-code">اتصال</div>
-                  </div>
-                  <div class="timeline-plane">
-                    <svg viewBox="0 0 24 24">
-                      <path d="m21 3-7.2 18-3.4-7.4L3 10.2 21 3Z" />
-                    </svg>
-                  </div>
-                </div>
-                <div class="timeline-segment">
-                  <div class="timeline-connector"></div>
-                  <div class="timeline-airport">
-                    <div class="timeline-airport-code">مقصد</div>
-                  </div>
-                </div>
+
+        <section class="monitoring-header no-print" id="top" aria-labelledby="page-title">
+          <div class="monitoring-header-inner">
+            <div class="monitoring-title">
+              <span class="monitoring-badge">✈️ ابزار عملیاتی</span>
+              <h1 id="page-title">رصد پروازها و فرودگاه‌های منطقه</h1>
+              <p class="monitoring-subtitle">ایران · ترکیه · عراق · عمان</p>
+              <div class="monitoring-chips">
+                <span class="scope-badge">۴ کشور تحت رصد</span>
+                <span class="scope-codes" dir="ltr">IR · TR · IQ · OM</span>
               </div>
             </div>
+            <a href="#form-section" class="monitoring-cta">شروع بررسی ↓</a>
           </div>
         </section>
 
-        <!-- Quick Routes Section -->
         <section class="quick-routes-section no-print" aria-label="مسیرهای پرتکرار">
           <div class="quick-routes-header">
-            <h2>مسیرهای پرتکرار</h2>
-            <a href="#form-section" class="text-link ltr">↓ رفتن به فرم</a>
+            <h2>⚡ انتخاب سریع مسیر</h2>
+            <span class="quick-routes-hint">با یک کلیک تمام فرودگاه‌ها پر می‌شود</span>
           </div>
-          <div class="quick-routes-carousel" id="quick-routes-carousel">
-            <!-- Quick route cards will be dynamically inserted here -->
-          </div>
+          <div class="quick-routes-carousel" id="quick-routes-carousel"></div>
         </section>
 
-        <!-- Form Section -->
+        <section class="quick-routes-section no-print" id="recent-routes-section" aria-label="مسیرهای اخیر" hidden>
+          <div class="quick-routes-header">
+            <h2>🕘 مسیرهای اخیر</h2>
+            <span class="quick-routes-hint">آنچه روی این دستگاه اجرا کرده‌اید</span>
+          </div>
+          <div class="quick-routes-carousel" id="recent-routes-carousel"></div>
+        </section>
+
         <section class="form-section" id="form-section" aria-labelledby="form-title">
           <div class="form-panel">
             <div class="form-panel-header">
@@ -152,14 +111,12 @@
               </div>
               <span class="required-note"><span class="required-mark" aria-hidden="true">*</span> موارد الزامی</span>
             </div>
-            
+
             <div class="form-panel-body">
               <form id="connection-form" novalidate>
                 <datalist id="airport-options"></datalist>
-                
-                <!-- Flight Cards -->
+
                 <div class="flight-cards">
-                  <!-- Flight 1 -->
                   <div class="flight-card" id="flight1-card">
                     <span class="flight-card-number">۱</span>
                     <div class="flight-card-header">
@@ -169,7 +126,7 @@
                       </div>
                       <span class="flight-card-icon" aria-hidden="true">✈️</span>
                     </div>
-                    
+
                     <div class="field-grid">
                       <div class="field-row">
                         <div class="field-group">
@@ -177,12 +134,12 @@
                             فرودگاه مبدا
                             <span class="required-mark">*</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight1-origin" 
-                            name="flight1-origin" 
-                            class="field-input" 
-                            placeholder="کد IATA یا نام فرودگاه" 
+                          <input
+                            type="text"
+                            id="flight1-origin"
+                            name="flight1-origin"
+                            class="field-input"
+                            placeholder="کد IATA یا نام فرودگاه"
                             list="airport-options"
                             autocomplete="off"
                             required
@@ -192,18 +149,18 @@
                           <p class="field-hint" id="flight1-origin-hint">مثال: IKA، THR، یا فرودگاه امام خمینی</p>
                           <p class="field-error" id="flight1-origin-error" data-error-for="flight1-origin"></p>
                         </div>
-                        
+
                         <div class="field-group">
                           <label for="flight1-destination">
                             فرودگاه مقصد
                             <span class="required-mark">*</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight1-destination" 
-                            name="flight1-destination" 
-                            class="field-input" 
-                            placeholder="کد IATA یا نام فرودگاه" 
+                          <input
+                            type="text"
+                            id="flight1-destination"
+                            name="flight1-destination"
+                            class="field-input"
+                            placeholder="کد IATA یا نام فرودگاه"
                             list="airport-options"
                             autocomplete="off"
                             required
@@ -214,27 +171,27 @@
                           <p class="field-error" id="flight1-destination-error" data-error-for="flight1-destination"></p>
                         </div>
                       </div>
-                      
+
                       <div class="field-row">
                         <div class="field-group">
                           <label for="flight1-departure-date">تاریخ حرکت</label>
-                          <input 
-                            type="date" 
-                            id="flight1-departure-date" 
-                            name="flight1-departure-date" 
+                          <input
+                            type="date"
+                            id="flight1-departure-date"
+                            name="flight1-departure-date"
                             class="field-input ltr"
                             required
                             aria-required="true"
                           />
                           <p class="field-error" id="flight1-departure-date-error" data-error-for="flight1-departure-date"></p>
                         </div>
-                        
+
                         <div class="field-group">
                           <label for="flight1-arrival-date">تاریخ ورود</label>
-                          <input 
-                            type="date" 
-                            id="flight1-arrival-date" 
-                            name="flight1-arrival-date" 
+                          <input
+                            type="date"
+                            id="flight1-arrival-date"
+                            name="flight1-arrival-date"
                             class="field-input ltr"
                             required
                             aria-required="true"
@@ -242,27 +199,27 @@
                           <p class="field-error" id="flight1-arrival-date-error" data-error-for="flight1-arrival-date"></p>
                         </div>
                       </div>
-                      
+
                       <div class="field-row">
                         <div class="field-group">
                           <label for="flight1-departure-time">ساعت حرکت (محلی)</label>
-                          <input 
-                            type="time" 
-                            id="flight1-departure-time" 
-                            name="flight1-departure-time" 
+                          <input
+                            type="time"
+                            id="flight1-departure-time"
+                            name="flight1-departure-time"
                             class="field-input ltr"
                             required
                             aria-required="true"
                           />
                           <p class="field-error" id="flight1-departure-time-error" data-error-for="flight1-departure-time"></p>
                         </div>
-                        
+
                         <div class="field-group">
                           <label for="flight1-arrival-time">ساعت ورود (محلی)</label>
-                          <input 
-                            type="time" 
-                            id="flight1-arrival-time" 
-                            name="flight1-arrival-time" 
+                          <input
+                            type="time"
+                            id="flight1-arrival-time"
+                            name="flight1-arrival-time"
                             class="field-input ltr"
                             required
                             aria-required="true"
@@ -270,32 +227,32 @@
                           <p class="field-error" id="flight1-arrival-time-error" data-error-for="flight1-arrival-time"></p>
                         </div>
                       </div>
-                      
+
                       <div class="field-row flight-identifiers">
                         <div class="field-group">
                           <label for="flight1-airline">
                             ایرلاین
                             <span class="optional-badge">اختیاری</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight1-airline" 
-                            name="flight1-airline" 
-                            class="field-input" 
+                          <input
+                            type="text"
+                            id="flight1-airline"
+                            name="flight1-airline"
+                            class="field-input"
                             placeholder="نام ایرلاین"
                           />
                         </div>
-                        
+
                         <div class="field-group">
                           <label for="flight1-number">
                             شماره پرواز
                             <span class="optional-badge">اختیاری</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight1-number" 
-                            name="flight1-number" 
-                            class="field-input ltr" 
+                          <input
+                            type="text"
+                            id="flight1-number"
+                            name="flight1-number"
+                            class="field-input ltr"
                             placeholder="مثال: IR123"
                             dir="ltr"
                           />
@@ -303,8 +260,7 @@
                       </div>
                     </div>
                   </div>
-                  
-                  <!-- Flight 2 -->
+
                   <div class="flight-card" id="flight2-card">
                     <span class="flight-card-number">۲</span>
                     <div class="flight-card-header">
@@ -314,7 +270,7 @@
                       </div>
                       <span class="flight-card-icon" aria-hidden="true">✈️</span>
                     </div>
-                    
+
                     <div class="field-grid">
                       <div class="field-row">
                         <div class="field-group">
@@ -322,33 +278,33 @@
                             فرودگاه مبدا
                             <span class="required-mark">*</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight2-origin" 
-                            name="flight2-origin" 
-                            class="field-input" 
-                            placeholder="کد IATA یا نام فرودگاه" 
+                          <input
+                            type="text"
+                            id="flight2-origin"
+                            name="flight2-origin"
+                            class="field-input"
+                            placeholder="کد IATA یا نام فرودگاه"
                             list="airport-options"
                             autocomplete="off"
                             required
                             aria-required="true"
                             aria-describedby="flight2-origin-hint"
                           />
-                          <p class="field-hint" id="flight2-origin-hint">مثال: IKA، THR</p>
+                          <p class="field-hint" id="flight2-origin-hint">مثال: IST، SAW</p>
                           <p class="field-error" id="flight2-origin-error" data-error-for="flight2-origin"></p>
                         </div>
-                        
+
                         <div class="field-group">
                           <label for="flight2-destination">
                             فرودگاه مقصد
                             <span class="required-mark">*</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight2-destination" 
-                            name="flight2-destination" 
-                            class="field-input" 
-                            placeholder="کد IATA یا نام فرودگاه" 
+                          <input
+                            type="text"
+                            id="flight2-destination"
+                            name="flight2-destination"
+                            class="field-input"
+                            placeholder="کد IATA یا نام فرودگاه"
                             list="airport-options"
                             autocomplete="off"
                             required
@@ -359,14 +315,14 @@
                           <p class="field-error" id="flight2-destination-error" data-error-for="flight2-destination"></p>
                         </div>
                       </div>
-                      
+
                       <div class="field-row">
                         <div class="field-group">
                           <label for="flight2-departure-date">تاریخ حرکت</label>
-                          <input 
-                            type="date" 
-                            id="flight2-departure-date" 
-                            name="flight2-departure-date" 
+                          <input
+                            type="date"
+                            id="flight2-departure-date"
+                            name="flight2-departure-date"
                             class="field-input ltr"
                             required
                             aria-required="true"
@@ -374,14 +330,14 @@
                           <p class="field-error" id="flight2-departure-date-error" data-error-for="flight2-departure-date"></p>
                         </div>
                       </div>
-                      
+
                       <div class="field-row">
                         <div class="field-group">
                           <label for="flight2-departure-time">ساعت حرکت (محلی)</label>
-                          <input 
-                            type="time" 
-                            id="flight2-departure-time" 
-                            name="flight2-departure-time" 
+                          <input
+                            type="time"
+                            id="flight2-departure-time"
+                            name="flight2-departure-time"
                             class="field-input ltr"
                             required
                             aria-required="true"
@@ -391,32 +347,32 @@
                           <p class="field-error" id="flight2-departure-time-error" data-error-for="flight2-departure-time"></p>
                         </div>
                       </div>
-                      
+
                       <div class="field-row flight-identifiers">
                         <div class="field-group">
                           <label for="flight2-airline">
                             ایرلاین
                             <span class="optional-badge">اختیاری</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight2-airline" 
-                            name="flight2-airline" 
-                            class="field-input" 
+                          <input
+                            type="text"
+                            id="flight2-airline"
+                            name="flight2-airline"
+                            class="field-input"
                             placeholder="نام ایرلاین"
                           />
                         </div>
-                        
+
                         <div class="field-group">
                           <label for="flight2-number">
                             شماره پرواز
                             <span class="optional-badge">اختیاری</span>
                           </label>
-                          <input 
-                            type="text" 
-                            id="flight2-number" 
-                            name="flight2-number" 
-                            class="field-input ltr" 
+                          <input
+                            type="text"
+                            id="flight2-number"
+                            name="flight2-number"
+                            class="field-input ltr"
                             placeholder="مثال: IR456"
                             dir="ltr"
                           />
@@ -426,7 +382,6 @@
                   </div>
                 </div>
 
-                <!-- Connection Details -->
                 <div class="connection-details" id="connection-details">
                   <div class="connection-details-header">
                     <span class="connection-details-icon" aria-hidden="true">
@@ -441,18 +396,15 @@
                       <p>وضعیت و شرایط ترانزیت را مشخص کنید</p>
                     </div>
                   </div>
-                  
-                  <div class="connection-conditions" id="connection-conditions">
-                    <!-- Condition chips will be dynamically inserted here -->
-                  </div>
-                  
+
+                  <div class="connection-conditions" id="connection-conditions"></div>
+
                   <p class="connection-hint" id="connection-hint">
                     <span class="hint-icon" aria-hidden="true">?</span>
-                    انتخاب «بله» یا «خیر» برای هر شرط، دقت محاسبه را افزایش می‌دهد
+                    انتخاب دقیق‌تر هر شرط، دقت محاسبه را افزایش می‌دهد
                   </p>
                 </div>
 
-                <!-- Connection Timeline -->
                 <div class="connection-timeline no-print" id="connection-timeline">
                   <div class="timeline-segment">
                     <div class="timeline-airport">
@@ -477,7 +429,6 @@
                   </div>
                 </div>
 
-                <!-- Form Error Summary -->
                 <div class="form-error-summary" id="form-error-summary" hidden aria-live="polite">
                   <span class="error-summary-icon" aria-hidden="true">!</span>
                   <div>
@@ -486,7 +437,6 @@
                   </div>
                 </div>
 
-                <!-- Form Actions -->
                 <div class="form-actions">
                   <p class="form-hint">تمام فیلدهای الزامی را پر کنید</p>
                   <button type="submit" class="primary-button" id="analyze-button">
@@ -505,7 +455,6 @@
           </div>
         </section>
 
-        <!-- Result Section -->
         <section class="result-section no-print" id="result-section" aria-labelledby="result-title" hidden>
           <div class="result-panel" id="result-panel">
             <div class="result-header">
@@ -515,9 +464,8 @@
               </div>
               <span class="result-date" id="result-date"></span>
             </div>
-            
+
             <div class="result-body">
-              <!-- Risk Summary -->
               <div class="risk-summary">
                 <div class="risk-card" id="risk-card">
                   <span class="risk-badge" id="risk-badge">
@@ -539,7 +487,7 @@
                   </div>
                   <p class="risk-level-text" id="risk-level-description">در حال محاسبه...</p>
                 </div>
-                
+
                 <div class="route-summary">
                   <div class="route-summary-card">
                     <div class="route-summary-header">
@@ -555,19 +503,13 @@
                       </div>
                     </div>
                     <p class="route-summary-path" id="route-summary-path">-</p>
-                    <div class="route-summary-tags" id="route-summary-tags">
-                      <!-- Tags will be dynamically inserted -->
-                    </div>
+                    <div class="route-summary-tags" id="route-summary-tags"></div>
                   </div>
                 </div>
               </div>
-              
-              <!-- Connection Stats -->
-              <div class="stats-grid" id="connection-stats">
-                <!-- Stats will be dynamically inserted -->
-              </div>
-              
-              <!-- Analysis Sections -->
+
+              <div class="stats-grid" id="connection-stats"></div>
+
               <div class="analysis-section">
                 <div class="analysis-header">
                   <span class="analysis-icon analysis-icon-success" aria-hidden="true">
@@ -585,7 +527,7 @@
                   <p id="analysis-summary-text">-</p>
                 </div>
               </div>
-              
+
               <div class="analysis-section">
                 <div class="analysis-header">
                   <span class="analysis-icon analysis-icon-warning" aria-hidden="true">
@@ -601,12 +543,10 @@
                   </div>
                 </div>
                 <div class="analysis-content" id="risk-factors">
-                  <div class="factor-list" id="factor-list">
-                    <!-- Factors will be dynamically inserted -->
-                  </div>
+                  <div class="factor-list" id="factor-list"></div>
                 </div>
               </div>
-              
+
               <div class="analysis-section">
                 <div class="analysis-header">
                   <span class="analysis-icon analysis-icon-success" aria-hidden="true">
@@ -623,8 +563,7 @@
                   <p id="recommendation-text">-</p>
                 </div>
               </div>
-              
-                <!-- Delay Simulation -->
+
               <div class="delay-section" id="delay-section">
                 <div class="analysis-header">
                   <span class="analysis-icon" aria-hidden="true">
@@ -637,21 +576,44 @@
                     <p class="analysis-description">تاثیر تاخیرهای احتمالی بر ریسک اتصال</p>
                   </div>
                 </div>
-                <div class="delay-grid" id="delay-grid">
-                  <!-- Delay cards will be dynamically inserted -->
+                <div class="delay-grid" id="delay-grid"></div>
+              </div>
+
+              <div class="notice-section" id="notice-section">
+                <div class="analysis-header">
+                  <span class="analysis-icon analysis-icon-warning" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5" />
+                      <path d="M2 12l10 5 10-5" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 class="analysis-title">اطلاعیه مهم برای خریدار بلیت</h3>
+                    <p class="analysis-description">این متن برای ارائه به مشتری و ثبت اطلاع‌رسانی طراحی شده است.</p>
+                  </div>
+                </div>
+                <div class="notice-content" id="customer-notice-text"></div>
+                <div class="notice-actions">
+                  <button class="secondary-button" id="copy-notice-button" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    <span>کپی اطلاعیه</span>
+                  </button>
+                  <p class="copy-feedback" id="notice-feedback" hidden></p>
                 </div>
               </div>
-              
-              <!-- Disclaimer -->
+
               <div class="disclaimer">
                 <span class="disclaimer-icon" aria-hidden="true">⚠️</span>
                 <p class="disclaimer-text">
-                  این ابزار برآورد داخلی ارائه می‌کند و امکان انجام ترانزیت را تضمین نمی‌کند. 
+                  این ابزار برآورد داخلی ارائه می‌کند و امکان انجام ترانزیت را تضمین نمی‌کند.
                   MCT رسمی، قوانین لحظه‌ای ایرلاین/فرودگاه یا مقررات مهاجرتی از این برنامه دریافت نمی‌شود.
                 </p>
               </div>
-              
-              <!-- Result Actions -->
+
               <div class="result-actions">
                 <button class="secondary-button" id="copy-result-button" type="button">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -669,13 +631,12 @@
                   <span>چاپ یا ذخیره PDF</span>
                 </button>
               </div>
-              
+
               <p class="copy-feedback" id="copy-feedback" hidden>نتیجه با موفقیت کپی شد!</p>
             </div>
           </div>
         </section>
 
-        <!-- Empty Result State -->
         <div class="empty-result no-print" id="empty-result">
           <div class="empty-state-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -689,7 +650,6 @@
           </div>
         </div>
 
-        <!-- History Section -->
         <section class="history-section" id="history-section" aria-labelledby="history-title">
           <div class="history-header">
             <div class="history-title-group">
@@ -704,11 +664,9 @@
               پاک کردن تاریخچه
             </button>
           </div>
-          
-          <div class="history-list" id="history-list">
-            <!-- History items will be dynamically inserted -->
-          </div>
-          
+
+          <div class="history-list" id="history-list"></div>
+
           <div class="history-empty-state" id="history-empty" hidden>
             <div class="empty-state-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -728,23 +686,19 @@
       </div>
     </main>
 
-    <!-- Footer -->
     <footer class="site-footer no-print">
       <div class="footer-brand">
         <span class="footer-brand-mark" aria-hidden="true">✈️</span>
         <span>بررسی ریسک کانکشن پرواز</span>
       </div>
       <p class="footer-copyright">
-        ابزار داخلی - استفاده تنها برای ارزیابی اولیه
+        ابزار داخلی — استفاده تنها برای ارزیابی اولیه
       </p>
       <div class="footer-links">
         <a href="#top" class="footer-link">برگشت به بالا</a>
       </div>
     </footer>
 
-    <!-- Toast Notification -->
     <div class="toast" id="toast" hidden aria-live="polite" aria-atomic="true"></div>
-
-
-</body>
+  </body>
 </html>
