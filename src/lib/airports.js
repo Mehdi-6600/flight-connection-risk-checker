@@ -1,12 +1,6 @@
 import { AIRPORTS } from "../../data/airports.js";
 import { isMonitoredCountry } from "./monitoring-scope.js";
 
-/**
- * در این نسخه، فقط فرودگاه‌های چهار کشور مجاز (ایران، ترکیه، عراق، عمان)
- * قابل انتخاب و رصد هستند. داده‌های خام در data/airports.js نگه داشته
- * می‌شوند اما از این لایه به بعد فیلتر می‌شوند تا هیچ مسیر یا فرودگاهی
- * خارج از scope در UI، Search، Monitoring یا History ظاهر نشود.
- */
 const SCOPED_AIRPORTS = AIRPORTS.filter((airport) => isMonitoredCountry(airport.country));
 
 const byIata = new Map(SCOPED_AIRPORTS.map((airport) => [airport.iata, airport]));
@@ -68,12 +62,7 @@ export function airportLocationLabel(airport) {
 }
 
 export function sameCity(first, second) {
-  return Boolean(
-    first &&
-      second &&
-      first.city === second.city &&
-      first.country === second.country,
-  );
+  return Boolean(first && second && first.city === second.city && first.country === second.country);
 }
 
 export function listAirports() {
