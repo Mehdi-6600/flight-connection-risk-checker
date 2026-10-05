@@ -1,4 +1,4 @@
-const CACHE_NAME = "flight-connection-risk-checker-v1.3.0";
+const CACHE_NAME = "flight-connection-risk-checker-v1.4.0";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -31,7 +31,13 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("flight-connection-risk-checker-") && key !== CACHE_NAME).map((key) => caches.delete(key)))).then(() => self.clients.claim()),
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key.startsWith("flight-connection-risk-checker-") && key !== CACHE_NAME)
+          .map((key) => caches.delete(key)),
+      ),
+    ).then(() => self.clients.claim()),
   );
 });
 
