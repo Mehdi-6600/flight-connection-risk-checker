@@ -9,7 +9,6 @@
 :root {
   color-scheme: dark;
 
-  /* ---------- COLORS ---------- */
   --bg-body: #0b1017;
   --bg-app: #111821;
 
@@ -50,12 +49,10 @@
   --risk-very-high: #ff626a;
   --risk-very-high-bg: rgba(255, 98, 106, 0.15);
 
-  /* ---------- BORDERS ---------- */
   --border-subtle: rgba(255, 255, 255, 0.055);
   --border: rgba(255, 255, 255, 0.09);
   --border-strong: rgba(255, 255, 255, 0.15);
 
-  /* ---------- SHADOWS ---------- */
   --shadow-soft:
     5px 5px 12px rgba(0, 0, 0, 0.32),
     -4px -4px 10px rgba(255, 255, 255, 0.03);
@@ -80,11 +77,9 @@
     0 0 18px var(--accent-glow),
     0 0 4px rgba(77, 163, 255, 0.15);
 
-  /* ---------- HIGHLIGHTS ---------- */
   --hl-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --hl-top-strong: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-  /* ---------- RADIUS ---------- */
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 18px;
@@ -93,7 +88,6 @@
   --radius-3xl: 30px;
   --radius-full: 999px;
 
-  /* ---------- SPACING ---------- */
   --sp-1: 0.25rem;
   --sp-2: 0.5rem;
   --sp-3: 0.75rem;
@@ -103,7 +97,6 @@
   --sp-8: 2rem;
   --sp-10: 2.5rem;
 
-  /* ---------- TYPOGRAPHY ---------- */
   --font-fa: "Vazirmatn", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-en: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
@@ -115,7 +108,6 @@
   --text-2xl: 1.65rem;
   --text-3xl: 2.1rem;
 
-  /* ---------- MOTION ---------- */
   --t-fast: 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --t-base: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --t-slow: 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -127,10 +119,6 @@
   --max-width: 640px;
   --pad: 1rem;
 }
-
-/* =========================================================
-   LIGHT MODE
-   ========================================================= */
 
 .light-mode {
   color-scheme: light;
@@ -185,10 +173,6 @@
   --hl-top: inset 0 1px 0 rgba(255, 255, 255, 0.85);
   --hl-top-strong: inset 0 1px 0 rgba(255, 255, 255, 1);
 }
-
-/* =========================================================
-   BASE
-   ========================================================= */
 
 *,
 *::before,
@@ -327,10 +311,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   direction: ltr;
 }
 
-/* =========================================================
-   CONTAINER
-   ========================================================= */
-
 .container {
   position: relative;
   z-index: 1;
@@ -339,10 +319,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin: 0 auto;
   padding: 1rem var(--pad) 3rem;
 }
-
-/* =========================================================
-   HEADER
-   ========================================================= */
 
 .site-header {
   position: sticky;
@@ -446,10 +422,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   stroke-linejoin: round;
 }
 
-/* =========================================================
-   INTRO
-   ========================================================= */
-
 .page-intro {
   padding: 1.6rem 0 1.35rem;
 }
@@ -494,10 +466,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   letter-spacing: 0.08em;
 }
 
-/* =========================================================
-   TITLES
-   ========================================================= */
-
 .section-title-row {
   display: flex;
   align-items: center;
@@ -510,10 +478,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 1.08rem;
   font-weight: 800;
 }
-
-/* =========================================================
-   QUICK ROUTES
-   ========================================================= */
 
 .quick-routes {
   margin-bottom: 1.35rem;
@@ -559,19 +523,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   box-shadow: var(--shadow-inset);
 }
 
-/* =========================================================
-   FORM
-   ========================================================= */
-
 .app-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
-/* =========================================================
-   MAIN CARDS
-   ========================================================= */
 
 .route-builder,
 .datetime-section,
@@ -600,10 +556,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-weight: 800;
   letter-spacing: 0.1em;
 }
-
-/* =========================================================
-   ROUTE FIELDS
-   ========================================================= */
 
 .leg-trigger {
   display: grid;
@@ -703,10 +655,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: var(--text-sm);
 }
 
-/* =========================================================
-   DATETIME  (fixed overflow)
-   ========================================================= */
-
+/* DATETIME */
 .datetime-section {
   padding: 1.15rem;
   border-radius: var(--radius-2xl);
@@ -806,10 +755,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* =========================================================
-   ADVANCED
-   ========================================================= */
-
 .advanced-details {
   padding: 1rem 1.15rem;
   border-radius: var(--radius-2xl);
@@ -848,10 +793,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   gap: 0.7rem;
   margin-top: 1rem;
 }
-
-/* =========================================================
-   CONNECTION CONDITIONS
-   ========================================================= */
 
 .connection-details {
   padding: 1.15rem;
@@ -939,10 +880,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     0 0 16px var(--accent-glow);
 }
 
-/* =========================================================
-   TIMELINE
-   ========================================================= */
-
 .connection-timeline {
   display: flex;
   align-items: center;
@@ -1026,10 +963,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   direction: ltr;
 }
 
-/* =========================================================
-   ERROR
-   ========================================================= */
-
 .form-error-summary {
   display: flex;
   gap: 0.65rem;
@@ -1051,10 +984,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background: var(--danger);
   font-weight: 800;
 }
-
-/* =========================================================
-   PRIMARY BUTTON
-   ========================================================= */
 
 .form-actions {
   padding-top: 0.2rem;
@@ -1118,10 +1047,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   to { transform: rotate(360deg); }
 }
 
-/* =========================================================
-   RESULT
-   ========================================================= */
-
 .result-section {
   margin-top: 1.35rem;
 }
@@ -1179,10 +1104,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   gap: 1rem;
   padding: 1.15rem;
 }
-
-/* =========================================================
-   RISK
-   ========================================================= */
 
 .risk-summary {
   display: grid;
@@ -1333,10 +1254,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: var(--text-sm);
 }
 
-/* =========================================================
-   ROUTE SUMMARY
-   ========================================================= */
-
 .route-summary-card {
   display: flex;
   flex-direction: column;
@@ -1374,10 +1291,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   border: 1px solid var(--border-subtle);
   font-size: var(--text-xs);
 }
-
-/* =========================================================
-   STATS
-   ========================================================= */
 
 .stats-grid {
   display: grid;
@@ -1437,10 +1350,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 0.72rem;
 }
 
-/* =========================================================
-   ANALYSIS
-   ========================================================= */
-
 .analysis-section,
 .delay-section,
 .notice-section {
@@ -1473,10 +1382,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: var(--text-sm);
   line-height: 1.9;
 }
-
-/* =========================================================
-   FACTORS
-   ========================================================= */
 
 .factor-list {
   display: flex;
@@ -1549,10 +1454,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 0.72rem;
   font-weight: 750;
 }
-
-/* =========================================================
-   DELAYS
-   ========================================================= */
 
 .delay-grid {
   display: grid;
@@ -1642,10 +1543,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: var(--text-xs);
 }
 
-/* =========================================================
-   NOTICE
-   ========================================================= */
-
 .notice-section {
   padding: 1.1rem;
   border-radius: var(--radius-2xl);
@@ -1697,10 +1594,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   line-height: 1.8;
 }
 
-/* =========================================================
-   SECONDARY BUTTONS
-   ========================================================= */
-
 .result-actions {
   display: flex;
   gap: 0.7rem;
@@ -1734,10 +1627,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   transform: translateY(2px);
   box-shadow: var(--shadow-inset);
 }
-
-/* =========================================================
-   HISTORY
-   ========================================================= */
 
 .history-section {
   margin-top: 2rem;
@@ -1901,10 +1790,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   text-align: center;
 }
 
-/* =========================================================
-   FOOTER
-   ========================================================= */
-
 .site-footer {
   margin-top: 2rem;
   padding: 1.5rem var(--pad);
@@ -1913,10 +1798,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: var(--text-xs);
   text-align: center;
 }
-
-/* =========================================================
-   AIRPORT PICKER
-   ========================================================= */
 
 .picker-backdrop {
   position: fixed;
@@ -2145,10 +2026,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   text-align: center;
 }
 
-/* =========================================================
-   TOAST
-   ========================================================= */
-
 .toast {
   position: fixed;
   z-index: var(--z-toast);
@@ -2167,10 +2044,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-weight: 650;
   animation: resultIn 0.25s ease-out;
 }
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
 
 @media (min-width: 640px) {
   .datetime-grid,
@@ -2221,10 +2094,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* =========================================================
-   ACCESSIBILITY / MOTION
-   ========================================================= */
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -2236,45 +2105,23 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* =========================================================
-   PRINT
-   ========================================================= */
-
+/* PRINT — fixed empty PDF */
 @media print {
   @page {
     size: A4;
-    margin: 14mm;
+    margin: 12mm;
   }
 
   html,
   body {
     background: #fff !important;
     color: #111827 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   body::before {
     display: none !important;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  #result-panel,
-  #result-panel * {
-    visibility: visible !important;
-  }
-
-  #result-panel {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    background: #fff;
   }
 
   .site-header,
@@ -2288,28 +2135,61 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   .notice-actions,
   .copy-feedback,
   .picker-sheet,
-  .picker-backdrop {
+  .picker-backdrop,
+  .theme-toggle,
+  .skip-link {
     display: none !important;
+  }
+
+  #result-section {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #result-panel,
+  #result-panel * {
+    visibility: visible !important;
+  }
+
+  #result-panel {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    overflow: visible !important;
+    animation: none !important;
   }
 
   .result-header {
     border-bottom: 2px solid #287bea;
+    padding: 0 0 10px !important;
+    margin-bottom: 12px;
   }
 
   .result-body {
-    padding: 0;
+    padding: 0 !important;
+    gap: 12px !important;
   }
 
   .risk-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   .delay-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   .analysis-section,
@@ -2318,15 +2198,24 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   .factor-item,
   .delay-card,
   .stat-card,
-  .notice-paragraph {
+  .notice-paragraph,
+  .risk-card,
+  .route-summary-card {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
   .notice-section,
-  .notice-content {
-    color: #111827;
-    background: #fff;
-    border: 1px solid #d1d5db;
+  .notice-content,
+  .disclaimer {
+    color: #111827 !important;
+    background: #fff !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+  }
+
+  .primary-button,
+  .secondary-button {
+    display: none !important;
   }
 }
