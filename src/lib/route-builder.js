@@ -1,6 +1,13 @@
 import { listAirports } from "./airports.js";
 import { MONITORED_COUNTRIES } from "./monitoring-scope.js";
 
+const COUNTRY_FLAGS = Object.freeze({
+  IR: "🇮🇷",
+  TR: "🇹🇷",
+  IQ: "🇮🇶",
+  OM: "🇴🇲",
+});
+
 export function buildCountryCityAirportTree() {
   const airports = listAirports();
   const byCountry = new Map();
@@ -12,6 +19,7 @@ export function buildCountryCityAirportTree() {
       byCountry.set(countryCode, {
         code: countryCode,
         nameFa: airport.countryFa,
+        flag: COUNTRY_FLAGS[countryCode] ?? "",
         cities: new Map(),
       });
     }
