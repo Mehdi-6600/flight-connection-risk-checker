@@ -1,101 +1,151 @@
 import { formatDuration, toPersianDigits } from "./time.js";
 
-const BASE_NOTICE = `اطلاعیه مهم درباره پروازهای کانکشنی
+function airportLine(airport) {
+  if (!airport) return "—";
+  const name = airport.nameFa || airport.nameEn || "";
+  const city = airport.cityFa || airport.city || "";
+  const country = airport.countryFa || airport.country || "";
+  const parts = [
+    airport.iata ? `${airport.iata}` : null,
+    name || null,
+    city || null,
+    country || null,
+  ].filter(Boolean);
+  return parts.join(" — ");
+}
 
-خریدار محترم،
+function routeSummary(input) {
+  const origin = input.flight1?.origin;
+  const viaIn = input.flight1?.destination;
+  const viaOut = input.flight2?.origin;
+  const dest = input.flight2?.destination;
 
-لطفاً پیش از خرید یا صدور بلیت توجه داشته باشید که پروازهای کانکشنی ممکن است تحت تأثیر عواملی از جمله تأخیر یا تغییر برنامه پرواز، حداقل زمان موردنیاز برای اتصال، تغییر ترمینال یا فرودگاه، کنترل‌های امنیتی و مرزی، Immigration، تحویل مجدد بار، نیاز به Check-in مجدد، شرایط بلیت‌های جداگانه و قوانین ایرلاین‌ها و فرودگاه‌ها قرار گیرند.
+  const sameConnectionAirport =
+    viaIn?.iata && viaOut?.iata && viaIn.iata === viaOut.iata;
 
-اطلاعات و ارزیابی ارائه‌شده توسط این سامانه صرفاً جنبه اطلاع‌رسانی و کمک به تصمیم‌گیری دارد و تضمین‌کننده امکان قطعی انجام اتصال یا پذیرش مسافر توسط ایرلاین یا فرودگاه نیست.
+  const lines = [
+    `مسیر مورد بررسی:`,
+    `• مبدأ: ${airportLine(origin)}`,
+    sameConnectionAirport
+      ? `• اتصال: ${airportLine(viaIn)}`
+      : `• ورود به اتصال: ${airportLine(viaIn)}\n• خروج از اتصال: ${airportLine(viaOut)}`,
+    `• مقصد نهایی: ${airportLine(dest)}`,
+  ];
 
-خریدار موظف است پیش از نهایی کردن خرید، شرایط بلیت، قوانین ایرلاین‌های مربوطه، الزامات ترانزیت، مدارک موردنیاز، شرایط ورود و خروج و الزامات مربوط به بار را بررسی و از صحت و کفایت زمان اتصال اطمینان حاصل نماید.
+  return lines.join("\n");
+}
 
-در پروازهای دارای بلیت‌های جداگانه یا Self-Transfer، ریسک از دست رفتن پرواز بعدی ممکن است افزایش یابد و حمایت‌های مربوط به یک بلیت واحد لزوماً وجود نداشته باشد.
+function shortBaseNotice() {
+  return `خریدار محترم،
 
-با خرید بلیت، خریدار اعلام می‌کند هشدارها و محدودیت‌های مربوط به مسیر و اتصال را مطالعه کرده و با آگاهی از شرایط و ریسک‌های احتمالی نسبت به انتخاب و خرید itinerary اقدام می‌نماید.`;
+این اطلاعیه مربوط به همان مسیر و فرودگاه‌هایی است که در مشخصات پرواز ثبت شده‌اند.
+ارزیابی سامانه فقط کمک به تصمیم‌گیری است و جایگزین تأیید رسمی ایرلاین، فرودگاه یا مراجع مهاجرتی نیست.
+پیش از خرید یا صدور بلیت، زمان اتصال، قوانین بلیت، بار، Immigration و شرایط ترانزیت را از منابع رسمی بررسی کنید.`;
+}
 
 function dynamicParagraphs(input, analysis) {
   const paragraphs = [];
   const { connection, timing } = analysis;
 
   if (!connection.sameAirport && connection.sameCity) {
+    const a = input.flight1?.destination;
+    const b = input.flight2?.origin;
     paragraphs.push(
-      "توجه: این itinerary شامل تغییر فرودگاه در یک شهر است و مسافر باید زمان، مسیر و امکان جابه‌جایی بین فرودگاه‌ها را شخصاً بررسی نماید.",
-    );
-  }
-  if (!connection.sameAirport && !connection.sameCity) {
-    paragraphs.push(
-      "توجه: فرودگاه ورود و فرودگاه حرکت پرواز بعدی در دو شهر متفاوت قرار دارند؛ این مورد نیازمند برنامه‌ریزی جداگانه برای جابه‌جایی زمینی و رعایت زمان کافی است.",
-    );
-  }
-  if (input.connection.ticketType === "separate") {
-    paragraphs.push(
-      "این itinerary شامل بلیت‌های جداگانه است و در صورت از دست رفتن پرواز بعدی، شرایط جبران یا انتقال به پرواز بعدی ممکن است با بلیت یکپارچه متفاوت باشد.",
-    );
-  }
-  if (input.connection.transferType === "self") {
-    paragraphs.push(
-      "این اتصال از نوع Self-Transfer است و مسئولیت رعایت زمان موردنیاز برای خروج، دریافت بار، انجام تشریفات و Check-in مجدد بر عهده مسافر است.",
-    );
-  }
-  if (input.connection.baggageThrough === "no") {
-    paragraphs.push(
-      "بر اساس اطلاعات ثبت‌شده، بار تا مقصد نهایی Check-through نمی‌شود؛ مسافر باید بار خود را در محل اتصال دریافت و مجدداً تحویل دهد و زمان لازم برای این فرآیند را در برنامه لحاظ کند.",
-    );
-  }
-  if (input.connection.terminalChange === "yes") {
-    paragraphs.push(
-      "در محل اتصال تغییر ترمینال وجود دارد؛ زمان و روش جابه‌جایی بین ترمینال‌ها باید پیش از سفر بررسی شود.",
-    );
-  }
-  if (input.connection.immigration === "yes") {
-    paragraphs.push(
-      "این اتصال نیازمند عبور از کنترل مهاجرت (Immigration) است؛ مدت زمان احتمالی و الزامات مدارک باید با مراجع رسمی تأیید شود.",
-    );
-  }
-  if (input.connection.recheck === "yes") {
-    paragraphs.push(
-      "پذیرش مجدد (Check-in) در محل اتصال لازم است؛ مهلت بسته شدن کانتر پذیرش ایرلاین بعدی باید جداگانه بررسی شود.",
-    );
-  }
-  if (input.connection.security === "yes") {
-    paragraphs.push(
-      "بازرسی امنیتی مجدد در محل اتصال لازم است و می‌تواند به زمان موردنیاز برای اتصال اضافه کند.",
+      `توجه: در محل اتصال تغییر فرودگاه در یک شهر وجود دارد` +
+        (a?.iata && b?.iata ? ` (${a.iata} → ${b.iata})` : "") +
+        `. زمان و امکان جابه‌جایی بین این دو فرودگاه را شخصاً بررسی کنید.`,
     );
   }
 
-  const min = timing.estimatedMinimumMinutes;
-  const actual = timing.connectionMinutes;
+  if (!connection.sameAirport && !connection.sameCity) {
+    const a = input.flight1?.destination;
+    const b = input.flight2?.origin;
+    paragraphs.push(
+      `توجه: فرودگاه ورود و خروج اتصال در دو شهر متفاوت هستند` +
+        (a?.cityFa && b?.cityFa ? ` (${a.cityFa} / ${b.cityFa})` : "") +
+        `. برای جابه‌جایی زمینی برنامه جداگانه لازم است.`,
+    );
+  }
+
+  if (input.connection?.ticketType === "separate") {
+    paragraphs.push(
+      "این مسیر با بلیت‌های جداگانه تعریف شده است؛ در صورت از دست رفتن پرواز بعدی، حمایت‌های بلیت یکپارچه لزوماً اعمال نمی‌شود.",
+    );
+  }
+
+  if (input.connection?.transferType === "self") {
+    paragraphs.push(
+      "اتصال از نوع Self-Transfer است؛ خروج، دریافت بار، تشریفات و Check-in مجدد بر عهده مسافر است.",
+    );
+  }
+
+  if (input.connection?.baggageThrough === "no") {
+    paragraphs.push(
+      "بار تا مقصد نهایی Check-through نمی‌شود؛ در محل اتصال باید بار دریافت و دوباره تحویل شود.",
+    );
+  }
+
+  if (input.connection?.terminalChange === "yes") {
+    paragraphs.push(
+      "در محل اتصال تغییر ترمینال ثبت شده است؛ زمان و روش جابه‌جایی بین ترمینال‌ها را بررسی کنید.",
+    );
+  }
+
+  if (input.connection?.immigration === "yes") {
+    paragraphs.push(
+      "عبور از Immigration در محل اتصال لازم است؛ مدارک و زمان احتمالی را با مراجع رسمی تطبیق دهید.",
+    );
+  }
+
+  if (input.connection?.recheck === "yes") {
+    paragraphs.push(
+      "Check-in مجدد در محل اتصال لازم است؛ مهلت بسته شدن کانتر ایرلاین بعدی را جداگانه چک کنید.",
+    );
+  }
+
+  if (input.connection?.security === "yes") {
+    paragraphs.push(
+      "بازرسی امنیتی مجدد در محل اتصال لازم است و می‌تواند به زمان اتصال اضافه کند.",
+    );
+  }
+
+  const min = timing?.estimatedMinimumMinutes;
+  const actual = timing?.connectionMinutes;
   if (typeof min === "number" && typeof actual === "number") {
     if (actual < min) {
       paragraphs.push(
-        `زمان اتصال این itinerary (${formatDuration(actual)}) کمتر از حداقل برآوردی این سامانه (${formatDuration(min)}) است؛ توصیه می‌شود این مسیر تنها با تأیید رسمی ایرلاین یا فرودگاه نهایی شود.`,
+        `زمان اتصال (${formatDuration(actual)}) کمتر از حداقل برآوردی سامانه (${formatDuration(min)}) است؛ فقط با تأیید رسمی نهایی کنید.`,
       );
     } else if (actual < min + 30) {
       paragraphs.push(
-        `زمان اتصال این itinerary (${formatDuration(actual)}) تنها اندکی بیشتر از حداقل برآوردی این سامانه (${formatDuration(min)}) است؛ حاشیهٔ زمانی محدود را در تصمیم خرید لحاظ کنید.`,
+        `زمان اتصال (${formatDuration(actual)}) تنها کمی بیشتر از حداقل برآوردی (${formatDuration(min)}) است؛ حاشیه زمانی محدود است.`,
       );
     }
   }
 
-  if (timing.crossesLocalDate) {
+  if (timing?.crossesLocalDate) {
     paragraphs.push(
-      "این اتصال از نیمه‌شب محلی عبور می‌کند؛ ساعات فعالیت فرودگاه، دسترسی به خدمات و امکان ماندن در محدودهٔ ترانزیت باید پیش از سفر بررسی شود.",
+      "این اتصال از نیمه‌شب محلی عبور می‌کند؛ ساعات فعالیت فرودگاه و امکان ماندن در محدوده ترانزیت را بررسی کنید.",
     );
   }
 
-  const finalScore = toPersianDigits(analysis.score);
-  const finalLevel = analysis.level.title;
+  const score = toPersianDigits(analysis.score);
+  const level = analysis.level?.title ?? "—";
   paragraphs.push(
-    `ارزیابی خودکار این سامانه برای این itinerary: «${finalLevel}» با امتیاز ${finalScore} از ۱۰۰. این ارزیابی صرفاً کمک‌کننده است و جایگزین تأیید رسمی نیست.`,
+    `نتیجه ارزیابی این مسیر: «${level}» با امتیاز ${score} از ۱۰۰. این نتیجه صرفاً کمکی است و تضمین اتصال نیست.`,
   );
 
   return paragraphs;
 }
 
 export function buildCustomerNotice(input, analysis) {
-  const paragraphs = [BASE_NOTICE, ...dynamicParagraphs(input, analysis)];
-  return paragraphs.join("\n\n");
+  const parts = [
+    "اطلاعیه مهم برای خریدار بلیت",
+    routeSummary(input),
+    shortBaseNotice(),
+    ...dynamicParagraphs(input, analysis),
+  ];
+  return parts.join("\n\n");
 }
 
-export const CUSTOMER_NOTICE_BASE = BASE_NOTICE;
+export const CUSTOMER_NOTICE_BASE = shortBaseNotice();
