@@ -121,7 +121,13 @@ function estimateMinimumMinutes(input, connection) {
 }
 
 function timePenalty(remainingMinutes, estimatedMctMinutes) {
-  if (remainingMinutes <= 0) return { points: 100, title: "زمان اتصال", description: "زمان باقی‌مانده برای رسیدن به پرواز بعدی وجود ندارد." };
+  if (remainingMinutes <= 0) {
+    return {
+      points: 100,
+      title: "زمان اتصال",
+      description: "زمان باقی‌مانده برای رسیدن به پرواز بعدی وجود ندارد.",
+    };
+  }
   const band = RISK_RULES.timePenaltyBands.find((item) => remainingMinutes < item.belowMinutes);
   if (band) {
     return {
@@ -167,6 +173,16 @@ function normalizedAirline(value) {
   return String(value ?? "").trim().toLocaleLowerCase("fa-IR").replace(/[\s\-_.]/g, "");
 }
 
+function applyLongLayoverRelief(rawScore, connectionMinutes, estimatedMinimumMinutes) {
+  if (connectionMinutes >= 48 * 60) return Math.min(rawScore, 12);
+  if (connectionMinutes >= 24 * 60) return Math.min(rawScore, 18);
+  if (connectionMinutes >= 12 * 60) return Math.min(rawScore, 28);
+  if (connectionMinutes >= estimatedMinimumMinutes + 6 * 60) {
+    return Math.min(rawScore, Math.round(rawScore * 0.55));
+  }
+  return rawScore;
+}
+
 function makeFactorList(input, connection, timing, estimatedMctMinutes) {
   const points = RISK_RULES.factorPoints;
   const factors = [];
@@ -180,7 +196,14 @@ function makeFactorList(input, connection, timing, estimatedMctMinutes) {
   );
 
   const timeResult = timePenalty(timing.connectionMinutes - timing.delayMinutes, estimatedMctMinutes);
-  addFactor(factors, "time", timeResult.title, timeResult.points, timeResult.description, timeResult.points >= 40 ? "danger" : timeResult.points >= 15 ? "caution" : "neutral");
+  addFactor(
+    factors,
+    "time",
+    timeResult.title,
+    timeResult.points,
+    timeResult.description,
+    timeResult.points >= 40 ? "danger" : timeResult.points >= 15 ? "caution" : "neutral",
+  );
 
   if (!connection.sameAirport) {
     const airportPoints = connection.sameCity ? points.sameCityAirportChange : points.differentCityAirportChange;
@@ -195,29 +218,80 @@ function makeFactorList(input, connection, timing, estimatedMctMinutes) {
       "danger",
     );
     if (input.connection.airportChange === "no") {
-      addFactor(factors, "airport-answer-conflict", "مغایرت در پاسخ تغییر فرودگاه", points.contradictoryAirportAnswer, "کدهای فرودگاه ورود و حرکت متفاوت‌اند، اما در فرم تغییر فرودگاه «خیر» انتخاب شده است؛ تشخیص خودکار بر اساس کدها اعمال شد.", "caution");
+      addFactor(
+        factors,
+        "airport-answer-conflict",
+        "مغایرت در پاسخ تغییر فرودگاه",
+        points.contradictoryAirportAnswer,
+        "کدهای فرودگاه ورود و حرکت متفاوت‌اند، اما در فرم تغییر فرودگاه «خیر» انتخاب شده است؛ تشخیص خودکار بر اساس کدها اعمال شد.",
+        "caution",
+      );
     }
   } else if (input.connection.airportChange === "yes") {
-    addFactor(factors, "airport-answer-conflict", "مغایرت در پاسخ تغییر فرودگاه", points.contradictoryAirportAnswer, "کدهای واردشده یکسان‌اند، اما در فرم تغییر فرودگاه «بله» انتخاب شده است.", "caution");
+    addFactor(
+      factors,
+      "airport-answer-conflict",
+      "مغایرت در پاسخ تغییر فرودگاه",
+      points.contradictoryAirportAnswer,
+      "کدهای واردشده یکسان‌اند، اما در فرم تغییر فرودگاه «بله» انتخاب شده است.",
+      "caution",
+    );
   }
 
   if (input.connection.ticketType === "separate") {
-    addFactor(factors, "separate-ticket", "دو بلیت جداگانه", points.separateTicket, "در بلیت‌های جداگانه، حمایت در صورت تأخیر و پذیرش مجدد می‌تواند تابع شرایط هر بلیت باشد.", "danger");
+    addFactor(
+      factors,
+      "separate-ticket",
+      "دو بلیت جداگانه",
+      points.separateTicket,
+      "در بلیت‌های جداگانه، حمایت در صورت تأخیر و پذیرش مجدد می‌تواند تابع شرایط هر بلیت باشد.",
+      "danger",
+    );
   } else if (input.connection.ticketType === "unknown") {
-    addFactor(factors, "ticket-unknown", "نوع بلیت نامشخص", points.ticketUnknown, "مشخص نیست دو پرواز در یک رزرو هستند یا بلیت جداگانه دارند.", "caution");
+    addFactor(
+      factors,
+      "ticket-unknown",
+      "نوع بلیت نامشخص",
+      points.ticketUnknown,
+      "مشخص نیست دو پرواز در یک رزرو هستند یا بلیت جداگانه دارند.",
+      "caution",
+    );
   }
 
   if (input.connection.transferType === "self") {
-    addFactor(factors, "self-transfer", "اتصال از نوع Self-transfer", points.selfTransfer, "ممکن است مسافر نیاز به دریافت بار، خروج از محدودهٔ ترانزیت و پذیرش مجدد داشته باشد.", "danger");
+    addFactor(
+      factors,
+      "self-transfer",
+      "اتصال از نوع Self-transfer",
+      points.selfTransfer,
+      "ممکن است مسافر نیاز به دریافت بار، خروج از محدودهٔ ترانزیت و پذیرش مجدد داشته باشد.",
+      "danger",
+    );
   } else if (input.connection.transferType === "landside") {
-    addFactor(factors, "landside", "خروج و ورود مجدد (Landside)", points.landside, "خروج از محدودهٔ ترانزیت و ورود دوباره می‌تواند مراحل بیشتری ایجاد کند.", "caution");
+    addFactor(
+      factors,
+      "landside",
+      "خروج و ورود مجدد (Landside)",
+      points.landside,
+      "خروج از محدودهٔ ترانزیت و ورود دوباره می‌تواند مراحل بیشتری ایجاد کند.",
+      "caution",
+    );
   } else if (input.connection.transferType === "unknown") {
-    addFactor(factors, "transfer-unknown", "نوع اتصال نامشخص", points.transferUnknown, "شرایط Airside یا Landside برای این itinerary مشخص نشده است.", "caution");
+    addFactor(
+      factors,
+      "transfer-unknown",
+      "نوع اتصال نامشخص",
+      points.transferUnknown,
+      "شرایط Airside یا Landside برای این itinerary مشخص نشده است.",
+      "caution",
+    );
   }
 
   const addAnswerFactor = (key, title, value, yesPoints, unknownPoints, yesDescription, unknownDescription) => {
     if (value === "yes") addFactor(factors, key, title, yesPoints, yesDescription, "caution");
-    else if (value === "unknown") addFactor(factors, `${key}-unknown`, `${title} نامشخص`, unknownPoints, unknownDescription, "caution");
+    else if (value === "unknown") {
+      addFactor(factors, `${key}-unknown`, `${title} نامشخص`, unknownPoints, unknownDescription, "caution");
+    }
   };
 
   const baggageRecheck = input.connection.baggageThrough === "no"
@@ -225,37 +299,129 @@ function makeFactorList(input, connection, timing, estimatedMctMinutes) {
     : input.connection.baggageThrough === "yes"
       ? "no"
       : "unknown";
-  addAnswerFactor("baggage", "تحویل مجدد بار", baggageRecheck, points.baggageRecheck, points.baggageUnknown, "بار تا مقصد نهایی Check-through نمی‌شود و ممکن است دریافت و تحویل مجدد لازم باشد.", "وضعیت انتقال بار مشخص نیست؛ الزام تحویل مجدد می‌تواند زمان‌بر باشد.");
-  addAnswerFactor("check-in", "پذیرش مجدد", input.connection.recheck, points.checkInRequired, points.checkInUnknown, "مسافر باید دوباره پذیرش شود؛ مهلت بسته‌شدن کانتر باید جداگانه بررسی شود.", "نیاز به پذیرش مجدد مشخص نشده است.");
-  addAnswerFactor("immigration", "کنترل مهاجرت", input.connection.immigration, points.immigrationRequired, points.immigrationUnknown, "عبور از Immigration می‌تواند به زمان اتصال اضافه کند و به تابعیت/قوانین مسیر وابسته است.", "نیاز به عبور از Immigration تأیید نشده است.");
-  addAnswerFactor("terminal", "تغییر ترمینال", input.connection.terminalChange, points.terminalChange, points.terminalUnknown, "تغییر ترمینال ممکن است نیازمند جابه‌جایی یا بازرسی دوباره باشد.", "نیاز به تغییر ترمینال مشخص نیست.");
-  addAnswerFactor("security", "بازرسی امنیتی مجدد", input.connection.security, points.securityRecheck, points.securityUnknown, "بازرسی امنیتی مجدد به مراحل اتصال اضافه می‌شود.", "نیاز به بازرسی امنیتی مجدد مشخص نشده است.");
+  addAnswerFactor(
+    "baggage",
+    "تحویل مجدد بار",
+    baggageRecheck,
+    points.baggageRecheck,
+    points.baggageUnknown,
+    "بار تا مقصد نهایی Check-through نمی‌شود و ممکن است دریافت و تحویل مجدد لازم باشد.",
+    "وضعیت انتقال بار مشخص نیست؛ الزام تحویل مجدد می‌تواند زمان‌بر باشد.",
+  );
+  addAnswerFactor(
+    "check-in",
+    "پذیرش مجدد",
+    input.connection.recheck,
+    points.checkInRequired,
+    points.checkInUnknown,
+    "مسافر باید دوباره پذیرش شود؛ مهلت بسته‌شدن کانتر باید جداگانه بررسی شود.",
+    "نیاز به پذیرش مجدد مشخص نشده است.",
+  );
+  addAnswerFactor(
+    "immigration",
+    "کنترل مهاجرت",
+    input.connection.immigration,
+    points.immigrationRequired,
+    points.immigrationUnknown,
+    "عبور از Immigration می‌تواند به زمان اتصال اضافه کند و به تابعیت/قوانین مسیر وابسته است.",
+    "نیاز به عبور از Immigration تأیید نشده است.",
+  );
+  addAnswerFactor(
+    "terminal",
+    "تغییر ترمینال",
+    input.connection.terminalChange,
+    points.terminalChange,
+    points.terminalUnknown,
+    "تغییر ترمینال ممکن است نیازمند جابه‌جایی یا بازرسی دوباره باشد.",
+    "نیاز به تغییر ترمینال مشخص نیست.",
+  );
+  addAnswerFactor(
+    "security",
+    "بازرسی امنیتی مجدد",
+    input.connection.security,
+    points.securityRecheck,
+    points.securityUnknown,
+    "بازرسی امنیتی مجدد به مراحل اتصال اضافه می‌شود.",
+    "نیاز به بازرسی امنیتی مجدد مشخص نشده است.",
+  );
 
   const airline1 = normalizedAirline(input.flight1.airline);
   const airline2 = normalizedAirline(input.flight2.airline);
   if (airline1 && airline2 && airline1 !== airline2) {
-    addFactor(factors, "airline-difference", "ایرلاین‌های متفاوت طبق اطلاعات فرم", points.airlineDifferent, `ایرلاین‌ها در فرم «${input.flight1.airline.trim()}» و «${input.flight2.airline.trim()}» ثبت شده‌اند؛ هماهنگی پذیرش/بار را بررسی کنید.`, "caution");
+    addFactor(
+      factors,
+      "airline-difference",
+      "ایرلاین‌های متفاوت طبق اطلاعات فرم",
+      points.airlineDifferent,
+      `ایرلاین‌ها در فرم «${input.flight1.airline.trim()}» و «${input.flight2.airline.trim()}» ثبت شده‌اند؛ هماهنگی پذیرش/بار را بررسی کنید.`,
+      "caution",
+    );
   } else if (!airline1 || !airline2) {
-    addFactor(factors, "airline-unknown", "اطلاعات ایرلاین کامل نیست", points.airlineUnknown, "نام هر دو ایرلاین ثبت نشده است؛ همکاری بین ایرلاین‌ها از این ابزار قابل تأیید نیست.", "caution");
+    addFactor(
+      factors,
+      "airline-unknown",
+      "اطلاعات ایرلاین کامل نیست",
+      points.airlineUnknown,
+      "نام هر دو ایرلاین ثبت نشده است؛ همکاری بین ایرلاین‌ها از این ابزار قابل تأیید نیست.",
+      "caution",
+    );
   }
 
   if (timing.ambiguousTimes) {
-    addFactor(factors, "dst-ambiguous-time", "ساعت محلی تکراری در تغییر ساعت فصلی", points.ambiguousLocalTime, "حداقل یکی از ساعت‌های ورودی در بازهٔ تکراری DST قرار دارد؛ برای محاسبه، رخداد زودتر انتخاب شده است. زمان را با بلیت/ایرلاین تطبیق دهید.", "caution");
+    addFactor(
+      factors,
+      "dst-ambiguous-time",
+      "ساعت محلی تکراری در تغییر ساعت فصلی",
+      points.ambiguousLocalTime,
+      "حداقل یکی از ساعت‌های ورودی در بازهٔ تکراری DST قرار دارد؛ برای محاسبه، رخداد زودتر انتخاب شده است. زمان را با بلیت/ایرلاین تطبیق دهید.",
+      "caution",
+    );
   }
 
   const crossesLocalDate = timing.crossesLocalDate;
-  if (crossesLocalDate) {
-    addFactor(factors, "overnight", "عبور اتصال از نیمه‌شب", points.overnightConnection, "تاریخ محلی ورود و حرکت بعدی متفاوت است؛ ساعات فعالیت و امکان ماندن در محدودهٔ ترانزیت را بررسی کنید.", "caution");
-  }
-  if (timing.connectionMinutes >= RISK_RULES.timeThresholds.longLayoverMinutes.veryLong) {
-    addFactor(factors, "long-layover", "توقف طولانی", points.longLayover24Hours, "توقف ۲۴ ساعته یا بیشتر ممکن است نیازمند بررسی اقامت، دسترسی به محدودهٔ ترانزیت و قوانین ورود باشد.", "caution");
-  } else if (timing.connectionMinutes >= RISK_RULES.timeThresholds.longLayoverMinutes.extended) {
-    addFactor(factors, "long-layover", "توقف بیش از ۱۲ ساعت", points.longLayover12Hours, "برای توقف طولانی، ساعت فعالیت فرودگاه و امکان ماندن در محدودهٔ ترانزیت را تأیید کنید.", "caution");
+  if (crossesLocalDate && timing.connectionMinutes < RISK_RULES.timeThresholds.longLayoverMinutes.extended) {
+    addFactor(
+      factors,
+      "overnight",
+      "عبور اتصال از نیمه‌شب",
+      points.overnightConnection,
+      "تاریخ محلی ورود و حرکت بعدی متفاوت است؛ ساعات فعالیت و امکان ماندن در محدودهٔ ترانزیت را بررسی کنید.",
+      "caution",
+    );
   }
 
-  const flightNumberMissing = Number(!String(input.flight1.flightNumber ?? "").trim()) + Number(!String(input.flight2.flightNumber ?? "").trim());
+  if (timing.connectionMinutes >= RISK_RULES.timeThresholds.longLayoverMinutes.veryLong) {
+    addFactor(
+      factors,
+      "long-layover",
+      "توقف چندروزه / بیش از ۲۴ ساعت",
+      0,
+      "فاصله اتصال بیش از یک شبانه‌روز است؛ ریسک از دست دادن پرواز بعدی به‌خاطر کمبود زمان اتصال پایین است، اما اقامت، ویزا و دسترسی به فرودگاه را جداگانه بررسی کنید.",
+      "success",
+    );
+  } else if (timing.connectionMinutes >= RISK_RULES.timeThresholds.longLayoverMinutes.extended) {
+    addFactor(
+      factors,
+      "long-layover",
+      "توقف بیش از ۱۲ ساعت",
+      0,
+      "توقف طولانی است؛ ریسک از دست دادن پرواز به‌خاطر کمبود زمان اتصال پایین است، اما ساعات فعالیت فرودگاه را تأیید کنید.",
+      "success",
+    );
+  }
+
+  const flightNumberMissing =
+    Number(!String(input.flight1.flightNumber ?? "").trim()) +
+    Number(!String(input.flight2.flightNumber ?? "").trim());
   if (flightNumberMissing) {
-    addFactor(factors, "flight-number-missing", "شماره پرواز کامل نیست", points.missingFlightNumber * flightNumberMissing, "شمارهٔ پروازها ثبت نشده است؛ تطبیق ترمینال، زمان‌بندی و شرایط رزرو باید با اطلاعات بلیت انجام شود.", "neutral");
+    addFactor(
+      factors,
+      "flight-number-missing",
+      "شماره پرواز کامل نیست",
+      points.missingFlightNumber * flightNumberMissing,
+      "شمارهٔ پروازها ثبت نشده است؛ تطبیق ترمینال، زمان‌بندی و شرایط رزرو باید با اطلاعات بلیت انجام شود.",
+      "neutral",
+    );
   }
 
   return factors;
@@ -275,25 +441,37 @@ function buildNarrative(input, connection, timing, estimatedMctMinutes, level) {
   }
 
   if (timing.delayMinutes > 0) {
-    sentences.push(`با فرض ${timing.delayMinutes} دقیقه تأخیر در پرواز اول، ${remaining <= 0 ? "زمان اتصال باقی نمی‌ماند" : `حدود ${remaining} دقیقه`} تا حرکت پرواز دوم می‌ماند.`);
+    sentences.push(
+      `با فرض ${timing.delayMinutes} دقیقه تأخیر در پرواز اول، ${
+        remaining <= 0 ? "زمان اتصال باقی نمی‌ماند" : `حدود ${remaining} دقیقه`
+      } تا حرکت پرواز دوم می‌ماند.`,
+    );
   } else {
-    sentences.push(`فاصلهٔ واقعی میان ورود و حرکت، با محاسبهٔ منطقهٔ زمانی هر فرودگاه، ${timing.connectionMinutes} دقیقه است.`);
+    sentences.push(
+      `فاصلهٔ واقعی میان ورود و حرکت، با محاسبهٔ منطقهٔ زمانی هر فرودگاه، ${timing.connectionMinutes} دقیقه است.`,
+    );
   }
 
   if (remaining < estimatedMctMinutes) {
     sentences.push(`این فاصله از برآورد داخلی ${estimatedMctMinutes} دقیقه‌ای برای شرایط ثبت‌شده کمتر است.`);
   } else {
-    sentences.push(`برآورد داخلیِ محافظه‌کارانه برای شرایط ثبت‌شده ${estimatedMctMinutes} دقیقه است؛ عبور از این برآورد، امکان ترانزیت را تضمین نمی‌کند.`);
+    sentences.push(
+      `برآورد داخلیِ محافظه‌کارانه برای شرایط ثبت‌شده ${estimatedMctMinutes} دقیقه است؛ عبور از این برآورد، امکان ترانزیت را تضمین نمی‌کند.`,
+    );
   }
 
   if (input.connection.ticketType === "separate") {
     sentences.push("چون بلیت‌ها جداگانه‌اند، مسئولیت و راهکار در صورت تأخیر ممکن است با یک رزرو یکسان نباشد.");
   }
   if (input.connection.transferType === "self") {
-    sentences.push("Self-transfer اعلام شده است؛ الزامات دریافت بار، خروج، پذیرش و کنترل‌های مرزی را از مراجع رسمی تأیید کنید.");
+    sentences.push(
+      "Self-transfer اعلام شده است؛ الزامات دریافت بار، خروج، پذیرش و کنترل‌های مرزی را از مراجع رسمی تأیید کنید.",
+    );
   }
   if (level.id === "low") {
-    sentences.push("با داده‌های فعلی، ریسک پایین ارزیابی می‌شود؛ پیش از نهایی‌کردن فروش، قوانین رسمی ایرلاین و فرودگاه همچنان باید بررسی شوند.");
+    sentences.push(
+      "با داده‌های فعلی، ریسک پایین ارزیابی می‌شود؛ پیش از نهایی‌کردن فروش، قوانین رسمی ایرلاین و فرودگاه همچنان باید بررسی شوند.",
+    );
   } else if (level.id === "medium") {
     sentences.push("پیش از پیشنهاد قطعی، موارد نامشخص و حداقل زمان اتصال را با ایرلاین/فرودگاه تطبیق دهید.");
   } else {
@@ -328,14 +506,25 @@ export function evaluateConnection(input, { delayMinutes = 0 } = {}) {
   };
   const estimatedMinimumMinutes = estimateMinimumMinutes(input, connection);
   const factors = makeFactorList(input, connection, timing, estimatedMinimumMinutes);
-  const rawScore = factors.reduce((sum, factor) => sum + factor.points, 0);
-  const score = Math.min(RISK_RULES.scoreRange.max, Math.max(RISK_RULES.scoreRange.min, Math.round(rawScore)));
+  let rawScore = factors.reduce((sum, factor) => sum + factor.points, 0);
+  rawScore = applyLongLayoverRelief(rawScore, timing.connectionMinutes, estimatedMinimumMinutes);
+  const score = Math.min(
+    RISK_RULES.scoreRange.max,
+    Math.max(RISK_RULES.scoreRange.min, Math.round(rawScore)),
+  );
   const level = scoreLevel(score);
   const remainingMinutes = timing.connectionMinutes - delayMinutes;
-  const sortedFactors = [...factors].sort((a, b) => b.points - a.points || a.title.localeCompare(b.title, "fa"));
+  const sortedFactors = [...factors].sort(
+    (a, b) => b.points - a.points || a.title.localeCompare(b.title, "fa"),
+  );
   const warnings = sortedFactors
     .filter((factor) => factor.points >= 6 || factor.tone === "danger")
-    .map((factor) => ({ title: factor.title, description: factor.description, tone: factor.tone, points: factor.points }));
+    .map((factor) => ({
+      title: factor.title,
+      description: factor.description,
+      tone: factor.tone,
+      points: factor.points,
+    }));
 
   const inputAirportAnswerConflict =
     (connection.sameAirport && input.connection.airportChange === "yes") ||
