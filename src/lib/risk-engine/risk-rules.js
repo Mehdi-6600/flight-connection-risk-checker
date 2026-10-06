@@ -66,7 +66,7 @@ export const RISK_RULES = Object.freeze({
     landside: 240,
     separateTicketOrSelfTransfer: 240,
     sameCityAirportChange: 150,
-    differentCityAirportChange: 480,
+    differentCityAirportChange: 240,
     immigrationYes: 45,
     immigrationUnknown: 15,
     terminalChangeYes: 30,
