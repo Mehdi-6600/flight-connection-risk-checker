@@ -437,7 +437,7 @@ function buildNarrative(input, connection, timing, estimatedMctMinutes, level) {
       `پرواز ورودی در ${airportLocationLabel(connection.arrivalAirport)} فرود می‌آید، اما پرواز بعدی از ${airportLocationLabel(connection.departureAirport)} انجام می‌شود. این وضعیت ${place} را در بر می‌گیرد و جابه‌جایی زمینی/زمان مسیر باید جداگانه بررسی شود.`,
     );
   } else {
-    sentences.push(`هر دو پرواز در ${airportLocationLabel(connection.arrivalAirport)} به هم می‌رسند.`);
+    sentences.push(`ورود پرواز اول و حرکت پرواز دوم در یک فرودگاه است: ${airportLocationLabel(connection.arrivalAirport)}.`);
   }
 
   if (timing.delayMinutes > 0) {
@@ -448,12 +448,12 @@ function buildNarrative(input, connection, timing, estimatedMctMinutes, level) {
     );
   } else {
     sentences.push(
-      `فاصلهٔ واقعی میان ورود و حرکت، با محاسبهٔ منطقهٔ زمانی هر فرودگاه، ${timing.connectionMinutes} دقیقه است.`,
+      `زمان بین ورود پرواز اول و حرکت پرواز دوم، با محاسبهٔ منطقهٔ زمانی هر فرودگاه، ${timing.connectionMinutes} دقیقه است.`,
     );
   }
 
   if (remaining < estimatedMctMinutes) {
-    sentences.push(`این فاصله از برآورد داخلی ${estimatedMctMinutes} دقیقه‌ای برای شرایط ثبت‌شده کمتر است.`);
+    sentences.push(`این زمان از برآورد داخلی ${estimatedMctMinutes} دقیقه‌ای برای شرایط ثبت‌شده کمتر است.`);
   } else {
     sentences.push(
       `برآورد داخلیِ محافظه‌کارانه برای شرایط ثبت‌شده ${estimatedMctMinutes} دقیقه است؛ عبور از این برآورد، امکان ترانزیت را تضمین نمی‌کند.`,
@@ -470,12 +470,12 @@ function buildNarrative(input, connection, timing, estimatedMctMinutes, level) {
   }
   if (level.id === "low") {
     sentences.push(
-      "با داده‌های فعلی، ریسک پایین ارزیابی می‌شود؛ پیش از نهایی‌کردن فروش، قوانین رسمی ایرلاین و فرودگاه همچنان باید بررسی شوند.",
+      "با داده‌های فعلی، ریسک پایین ارزیابی می‌شود؛ تطبیق شرایط رسمی با ایرلاین و فرودگاه همچنان توصیه می‌شود.",
     );
   } else if (level.id === "medium") {
-    sentences.push("پیش از پیشنهاد قطعی، موارد نامشخص و حداقل زمان اتصال را با ایرلاین/فرودگاه تطبیق دهید.");
+    sentences.push("تطبیق موارد نامشخص و حداقل زمان اتصال با ایرلاین یا فرودگاه توصیه می‌شود.");
   } else {
-    sentences.push("بر اساس این برآورد، پیشنهاد این اتصال بدون تأیید رسمی یا اصلاح itinerary توصیه نمی‌شود.");
+    sentences.push("توصیه می‌شود پیش از سفر، جزئیات مسیر، بار و شرایط ترانزیت با ایرلاین و فرودگاه تأیید شود.");
   }
   return sentences.join(" ");
 }
