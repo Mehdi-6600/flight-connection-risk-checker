@@ -173,13 +173,19 @@ function normalizedAirline(value) {
   return String(value ?? "").trim().toLocaleLowerCase("fa-IR").replace(/[\s\-_.]/g, "");
 }
 
+/**
+ * وقتی فاصله اتصال بسیار بیشتر از MCT برآوردی است، ریسک «کمبود زمان» از بین می‌رود.
+ * سقف امتیاز طوری تنظیم می‌شود که هرچه فاصله بیشتر، سطح نهایی پایین‌تر بماند.
+ */
 function applyLongLayoverRelief(rawScore, connectionMinutes, estimatedMinimumMinutes) {
-  if (connectionMinutes >= 48 * 60) return Math.min(rawScore, 12);
-  if (connectionMinutes >= 24 * 60) return Math.min(rawScore, 18);
-  if (connectionMinutes >= 12 * 60) return Math.min(rawScore, 28);
-  if (connectionMinutes >= estimatedMinimumMinutes + 6 * 60) {
-    return Math.min(rawScore, Math.round(rawScore * 0.55));
-  }
+  const extra = connectionMinutes - estimatedMinimumMinutes;
+
+  if (connectionMinutes >= 48 * 60 || extra >= 24 * 60) return Math.min(rawScore, 5);
+  if (connectionMinutes >= 24 * 60 || extra >= 12 * 60) return Math.min(rawScore, 10);
+  if (connectionMinutes >= 12 * 60 || extra >= 8 * 60) return Math.min(rawScore, 14);
+  if (connectionMinutes >= 8 * 60 || extra >= 6 * 60) return Math.min(rawScore, 15);
+  if (connectionMinutes >= 6 * 60 || extra >= 4 * 60) return Math.min(rawScore, 25);
+  if (extra >= 3 * 60) return Math.min(rawScore, 35);
   return rawScore;
 }
 
@@ -437,7 +443,9 @@ function buildNarrative(input, connection, timing, estimatedMctMinutes, level) {
       `پرواز ورودی در ${airportLocationLabel(connection.arrivalAirport)} فرود می‌آید، اما پرواز بعدی از ${airportLocationLabel(connection.departureAirport)} انجام می‌شود. این وضعیت ${place} را در بر می‌گیرد و جابه‌جایی زمینی/زمان مسیر باید جداگانه بررسی شود.`,
     );
   } else {
-    sentences.push(`ورود پرواز اول و حرکت پرواز دوم در یک فرودگاه است: ${airportLocationLabel(connection.arrivalAirport)}.`);
+    sentences.push(
+      `ورود پرواز اول و حرکت پرواز دوم در یک فرودگاه است: ${airportLocationLabel(connection.arrivalAirport)}.`,
+    );
   }
 
   if (timing.delayMinutes > 0) {
@@ -453,29 +461,35 @@ function buildNarrative(input, connection, timing, estimatedMctMinutes, level) {
   }
 
   if (remaining < estimatedMctMinutes) {
-    sentences.push(`این زمان از برآورد داخلی ${estimatedMctMinutes} دقیقه‌ای برای شرایط ثبت‌شده کمتر است.`);
+    sentences.push(
+      `این زمان از برآورد داخلی ${estimatedMctMinutes} دقیقه‌ای برای شرایط ثبت‌شده کمتر است؛ بهتر است مسافر تشریفات اتصال را سریع انجام دهد.`,
+    );
   } else {
     sentences.push(
-      `برآورد داخلیِ محافظه‌کارانه برای شرایط ثبت‌شده ${estimatedMctMinutes} دقیقه است؛ عبور از این برآورد، امکان ترانزیت را تضمین نمی‌کند.`,
+      `برآورد داخلیِ محافظه‌کارانه برای شرایط ثبت‌شده ${estimatedMctMinutes} دقیقه است؛ مسافر می‌تواند مراحل اتصال را در این بازه انجام دهد.`,
     );
   }
 
   if (input.connection.ticketType === "separate") {
-    sentences.push("چون بلیت‌ها جداگانه‌اند، مسئولیت و راهکار در صورت تأخیر ممکن است با یک رزرو یکسان نباشد.");
+    sentences.push(
+      "چون بلیت‌ها جداگانه‌اند، در صورت تأخیر، راهکار جبرانی ممکن است با بلیت یکپارچه متفاوت باشد.",
+    );
   }
   if (input.connection.transferType === "self") {
     sentences.push(
-      "Self-transfer اعلام شده است؛ الزامات دریافت بار، خروج، پذیرش و کنترل‌های مرزی را از مراجع رسمی تأیید کنید.",
+      "Self-transfer اعلام شده است؛ دریافت بار، خروج، پذیرش و کنترل‌های مرزی باید توسط مسافر مدیریت شود.",
     );
   }
   if (level.id === "low") {
     sentences.push(
-      "با داده‌های فعلی، ریسک پایین ارزیابی می‌شود؛ تطبیق شرایط رسمی با ایرلاین و فرودگاه همچنان توصیه می‌شود.",
+      "با داده‌های فعلی، ریسک اتصال پایین ارزیابی می‌شود؛ تطبیق شرایط رسمی با ایرلاین و فرودگاه توصیه می‌شود.",
     );
   } else if (level.id === "medium") {
-    sentences.push("تطبیق موارد نامشخص و حداقل زمان اتصال با ایرلاین یا فرودگاه توصیه می‌شود.");
+    sentences.push("چند نکته در این اتصال نیازمند توجه است؛ تطبیق موارد با ایرلاین یا فرودگاه توصیه می‌شود.");
   } else {
-    sentences.push("توصیه می‌شود پیش از سفر، جزئیات مسیر، بار و شرایط ترانزیت با ایرلاین و فرودگاه تأیید شود.");
+    sentences.push(
+      "چند عامل در این اتصال نیازمند بررسی دقیق‌تر است؛ توصیه می‌شود جزئیات مسیر، بار و ترانزیت با ایرلاین و فرودگاه تطبیق داده شود.",
+    );
   }
   return sentences.join(" ");
 }
